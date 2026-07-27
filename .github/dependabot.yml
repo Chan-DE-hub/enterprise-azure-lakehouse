@@ -1,0 +1,41 @@
+version: 2
+
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+      timezone: "UTC"
+
+    open-pull-requests-limit: 5
+
+    labels:
+      - "dependencies"
+
+    commit-message:
+      prefix: "deps"
+
+    reviewers:
+      - "Chan-DE-hub"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:30"
+      timezone: "UTC"
+
+    open-pull-requests-limit: 3
+
+    labels:
+      - "github-actions"
+
+    commit-message:
+      prefix: "ci"
+
+    reviewers:
+      - "Chan-DE-hub"
