@@ -1,0 +1,60 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+
+  repository-validation:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate repository structure
+        run: |
+          echo "Repository validation started."
+
+          test -f README.md
+          test -f LICENSE
+          test -f CHANGELOG.md
+          test -f CONTRIBUTING.md
+          test -f SECURITY.md
+          test -f CODE_OF_CONDUCT.md
+
+          echo "Required repository files exist."
+
+      - name: Validate documentation
+        run: |
+          echo "Architecture documentation"
+
+          test -f docs/architecture/architecture-overview.md
+          test -f docs/architecture/repository-structure.md
+
+          echo "Architecture documentation verified."
+
+      - name: Validate GitHub configuration
+        run: |
+          echo "GitHub configuration"
+
+          test -f .github/CODEOWNERS
+          test -f .github/pull_request_template.md
+          test -f .github/dependabot.yml
+
+          echo "GitHub configuration verified."
+
+      - name: Repository summary
+        run: |
+          echo "Repository validation completed successfully."
