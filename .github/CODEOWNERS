@@ -1,0 +1,61 @@
+# Enterprise Azure Lakehouse code ownership
+#
+# The repository currently has one maintainer.
+# Ownership rules are organized by engineering responsibility so they can
+# transition cleanly to team-based ownership in an enterprise environment.
+
+# Default owner for all files
+* @Chan-DE-hub
+
+# Repository governance and collaboration
+/.github/ @Chan-DE-hub
+/CONTRIBUTING.md @Chan-DE-hub
+/CODE_OF_CONDUCT.md @Chan-DE-hub
+/SECURITY.md @Chan-DE-hub
+/CHANGELOG.md @Chan-DE-hub
+/LICENSE @Chan-DE-hub
+
+# Project overview and architecture
+/README.md @Chan-DE-hub
+/docs/architecture/ @Chan-DE-hub
+
+# Development, deployment, testing, security, and operations documentation
+/docs/development/ @Chan-DE-hub
+/docs/deployment/ @Chan-DE-hub
+/docs/testing/ @Chan-DE-hub
+/docs/security/ @Chan-DE-hub
+/docs/operations/ @Chan-DE-hub
+
+# Environment and technical configuration
+/config/ @Chan-DE-hub
+
+# Data contracts, reference data, and synthetic data
+/data/contracts/ @Chan-DE-hub
+/data/reference/ @Chan-DE-hub
+/data/synthetic/ @Chan-DE-hub
+
+# Azure and Databricks infrastructure
+/infrastructure/ @Chan-DE-hub
+
+# Databricks bundle and resource definitions
+/databricks.yml @Chan-DE-hub
+/resources/ @Chan-DE-hub
+
+# Application and pipeline source code
+/src/ @Chan-DE-hub
+
+# Governance, control, audit, monitoring, and validation SQL
+/sql/ @Chan-DE-hub
+
+# Automated tests and fixtures
+/tests/ @Chan-DE-hub
+
+# Operational and repository scripts
+/scripts/ @Chan-DE-hub
+
+# Python development and validation configuration
+/pyproject.toml @Chan-DE-hub
+/uv.lock @Chan-DE-hub
+/.pre-commit-config.yaml @Chan-DE-hub
+/.editorconfig @Chan-DE-hub
+/.gitignore @Chan-DE-hub
