@@ -46,40 +46,40 @@ The organization requires a governed Lakehouse platform that supports:
 
 The architecture must provide:
 
-1. **Source fidelity**  
+1. **Source fidelity**
    Preserve sufficient source content and technical metadata to support troubleshooting, reconciliation, replay, and audit.
 
-2. **Incremental processing**  
+2. **Incremental processing**
    Process only new or changed data whenever the source and business requirement permit it.
 
-3. **Idempotency**  
+3. **Idempotency**
    Reprocessing the same input must not produce uncontrolled duplicate business records or inconsistent target state.
 
-4. **Replayability**  
+4. **Replayability**
    Retained source data, deterministic transformations, and controlled checkpoints must support recovery and backfill.
 
-5. **Separation of concerns**  
+5. **Separation of concerns**
    Ingestion, parsing, validation, business transformation, orchestration, infrastructure, and monitoring must have distinct responsibilities.
 
-6. **Metadata-driven technical behavior**  
+6. **Metadata-driven technical behavior**
    Repeated technical ingestion settings may be configuration-driven, while complex business logic remains explicit and code-reviewed.
 
-7. **Governance by default**  
+7. **Governance by default**
    Data, files, tables, permissions, lineage, and ownership must be managed through Unity Catalog and controlled deployment processes.
 
-8. **Observability by design**  
+8. **Observability by design**
    Pipeline health, freshness, quality, schema drift, reconciliation, and failures must be measurable.
 
-9. **Secure defaults**  
+9. **Secure defaults**
    The implementation must avoid embedded credentials and follow least-privilege access principles.
 
-10. **Cost awareness**  
+10. **Cost awareness**
     Batch, triggered processing, serverless capabilities, local execution, and limited cloud runtimes must be preferred when they satisfy the requirement.
 
-11. **Testability**  
+11. **Testability**
     Parsers, validators, configuration readers, transformations, and data contracts must be testable independently.
 
-12. **Operational simplicity**  
+12. **Operational simplicity**
     Native platform capabilities must be preferred over unnecessary custom frameworks.
 
 ---
