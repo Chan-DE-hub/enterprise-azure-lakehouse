@@ -1,210 +1,299 @@
 # Enterprise Azure Lakehouse
 
-A production-oriented Data Engineering portfolio project demonstrating modern Azure and Databricks architecture using metadata-driven ingestion, Medallion Architecture, Unity Catalog, Delta Lake, Lakeflow Declarative Pipelines, CI/CD, testing, governance, and observability.
+> **Production-inspired Azure Lakehouse portfolio** demonstrating modern
+> software engineering, metadata-driven architecture, and an incremental
+> implementation roadmap.
 
-> This project is a portfolio-based reference implementation. It simulates enterprise engineering practices and does not represent production deployment experience with every technology included.
+![Status](https://img.shields.io/badge/status-active%20development-blue)
+![Python](https://img.shields.io/badge/python-3.12+-3776AB)
+![License](https://img.shields.io/badge/license-MIT-green)
 
----
+> **Portfolio Status:** 🚧 Active Development
+>
+> This repository intentionally distinguishes **implemented
+> functionality** from the **planned platform roadmap**. The goal is to
+> demonstrate sound engineering practices while incrementally building
+> an enterprise-inspired Azure Lakehouse.
+
+------------------------------------------------------------------------
+
+## Table of Contents
+
+-   Project Overview
+-   Project Status
+-   Business Scenario
+-   Target Architecture
+-   Supporting Platform Capabilities
+-   Technology Stack
+-   Engineering Principles
+-   Project Roadmap
+-   Repository Structure
+-   Portfolio Scope
+-   Current Limitations
+-   Future Work
+-   Contributing
+-   License
+-   Author
+
+------------------------------------------------------------------------
+
+## Project Overview
+
+This repository is a long-term portfolio project focused on building a
+production-inspired Azure Lakehouse using modern Data Engineering
+principles.
+
+Rather than presenting a finished solution, the repository evolves
+incrementally through small, reviewable pull requests, automated quality
+gates, and architecture-first development.
+
+------------------------------------------------------------------------
 
 ## Project Status
 
-**Current phase:** Repository Foundation
+### ✅ Phase 1 --- Python Foundation (Completed)
 
-This project is being developed incrementally using architecture-first and production-oriented engineering principles.
+-   Structured logging
+-   Typed configuration framework
+-   Enterprise exception hierarchy
+-   Metadata models
+-   Repository Pattern
+-   YAML metadata repository
+-   Validation and business rules
+-   Cached repository implementation
+-   Unit tests
+-   Ruff
+-   mypy
+-   pre-commit
 
----
+### 🚧 Phase 2 --- Documentation (In Progress)
+
+-   Repository documentation
+-   Architecture documentation
+-   Portfolio transparency
+-   README improvements
+
+### ⏳ Phase 3 --- Azure Lakehouse (Planned)
+
+-   Databricks platform
+-   Unity Catalog
+-   Auto Loader
+-   Bronze ingestion
+-   Silver transformations
+-   Gold data products
+
+------------------------------------------------------------------------
 
 ## Business Scenario
 
-A retail organization receives customer, product, order, payment, shipment, and return data from multiple operational systems.
+This repository models a fictional retail organization receiving
+customer, product, order, shipment, payment, and return data from
+multiple operational systems.
 
-The objective is to build a secure, scalable, governed, and observable Lakehouse platform that supports:
+The objective is to design a secure, scalable, governed, and observable
+Azure Lakehouse using a metadata-driven architecture.
 
-- Batch file ingestion
-- Incremental processing
-- Change Data Capture
-- Streaming events
-- Data quality and quarantine
-- Dimensional modeling
-- Business reporting
-- Operational monitoring
-- Replay and backfill
-- Automated deployment
-
----
+------------------------------------------------------------------------
 
 ## Target Architecture
 
-```text
-Source Systems
-    ↓
-ADLS Gen2 Landing Zone / Event Broker
-    ↓
+``` text
+Enterprise Systems
+        │
+        ▼
+Azure Data Factory / Event Hubs / Kafka
+        │
+        ▼
+Azure Data Lake Storage Gen2
+        │
+        ▼
 Unity Catalog External Volumes
-    ↓
-Bronze Raw Data
-    ↓
-Data Quality and Quarantine
-    ↓
-Silver Conformed Data
-    ↓
-Gold Data Products
-    ↓
-Databricks SQL / BI / Analytics
+        │
+        ▼
+Databricks Auto Loader
+        │
+        ▼
+Bronze
+   ├── Audit
+   ├── Logging
+   ├── Quarantine
+   └── Expectations
+        │
+        ▼
+Silver
+   ├── Cleansing
+   ├── Deduplication
+   ├── CDC
+   └── Business Rules
+        │
+        ▼
+Gold
+   ├── Data Products
+   ├── Aggregates
+   └── Reporting
+        │
+        ▼
+Power BI / Databricks SQL
+```
 
+------------------------------------------------------------------------
 
-**Supporting platform Capabilities:**
+## Supporting Platform Capabilities
 
-GitHub
-    ↓
-GitHub Actions
-    ↓
-Databricks Declarative Automation Bundles
-    ↓
-Azure Databricks
+  Capability             Status
+  ---------------------- ----------------
+  Git & GitHub           ✅ Implemented
+  GitHub Actions         ⏳ Planned
+  Azure Databricks       ⏳ Planned
+  Unity Catalog          ⏳ Planned
+  Azure Key Vault        ⏳ Planned
+  Terraform              ⏳ Planned
+  Databricks Workflows   ⏳ Planned
+  Monitoring & Audit     ⏳ Planned
 
-Azure Key Vault
-Unity Catalog
-Terraform
-Databricks Workflows
-Monitoring and Audit Framework
+------------------------------------------------------------------------
 
 ## Technology Stack
 
-**Core Platform**
-- Microsoft Azure
-- Azure Data Lake Storage Gen2
-- Azure Databricks
-- Unity Catalog
-- Delta Lake
-- Lakeflow Spark Declarative Pipelines
+  Category             Status
+  -------------------- --------
+  Python               ✅
+  Pydantic             ✅
+  YAML                 ✅
+  pytest               ✅
+  Ruff                 ✅
+  mypy                 ✅
+  Git                  ✅
+  GitHub               ✅
+  Azure                ⏳
+  Azure Data Factory   ⏳
+  ADLS Gen2            ⏳
+  Databricks           ⏳
+  Spark / PySpark      ⏳
+  Delta Lake           ⏳
+  Unity Catalog        ⏳
+  Auto Loader          ⏳
+  dbt                  ⏳
+  Snowflake            ⏳
+  Airflow              ⏳
+  Terraform            ⏳
 
-**Data Engineering**
-- Python
-- PySpark
-- SQL
-- Apache Spark Structured Streaming
-- Auto Loader
-- Metadata-driven ingestion
-- CDC and incremental processing
-
-**DevOps and Infrastructure**
-- Git
-- GitHub
-- GitHub Actions
-- Declarative Automation Bundles
-- Terraform
-- YAML
-
-**Supporting Technologies**
-- Azure Event Hubs
-- Apache Kafka
-- dbt
-- Apache Airflow
-- Snowflake
+------------------------------------------------------------------------
 
 ## Engineering Principles
 
-**This project follows the following principles:**
-- Source fidelity
-- Separation of concerns
-- Metadata-driven technical behavior
-- Explicit business logic
-- Idempotent processing
-- Incremental processing
-- Schema enforcement
-- Data contracts
-- Least-privilege access
-- Environment isolation
-- Observability by design
-- Replayability
-- Testability
-- Auditability
-- Cost awareness
-- Documentation as code
-- Simplicity before abstraction
+-   Metadata-driven design
+-   Configuration over hardcoding
+-   Strong typing
+-   Repository Pattern
+-   Separation of concerns
+-   Structured logging
+-   Automated quality checks
+-   Unit testing
+-   Incremental delivery
+-   Small pull requests
+-   Documentation alongside implementation
 
-**Planned Project Phases**
-1. Repository foundation
-2. Azure and Databricks platform blueprint
-3. Unity Catalog bootstrap
-4. Declarative Automation Bundle foundation
-5. Configuration, control, and audit models
-6. File-ingestion Bronze layer
-7. Data quality and quarantine
-8. Silver processing
-9. Gold data products
-10. Observability and alerting
-11. Testing and CI/CD
-12. Backfill, replay, and operational runbooks
-13. Kafka streaming
-14. Azure Event Hubs streaming
-15. Direct source-system ingestion
-16. Final architecture and hiring-manager review
+------------------------------------------------------------------------
 
-**Planned Data Domains**
-- Customers
-- Products
-- Orders
-- Order items
-- Payments
-- Shipments
-- Returns
+## Project Roadmap
 
-**Repository Structure**
+1.  Repository foundation
+2.  Azure platform bootstrap
+3.  Unity Catalog
+4.  Databricks Asset Bundles
+5.  Metadata framework
+6.  Bronze ingestion
+7.  Data quality & quarantine
+8.  Silver processing
+9.  Gold layer
+10. Observability
+11. CI/CD
+12. Replay & backfill
+13. Streaming
+14. Production-style documentation
 
+------------------------------------------------------------------------
+
+## Repository Structure
+
+``` text
 enterprise-azure-lakehouse/
-│
-├── README.md
-├── LICENSE
-├── .gitignore
-│
 ├── src/
 ├── config/
+├── docs/
+├── infrastructure/
 ├── resources/
+├── scripts/
 ├── sql/
 ├── tests/
-├── scripts/
-├── infrastructure/
-├── docs/
-└── sample_data/
+├── sample_data/
+└── README.md
+```
 
-The repository structure will be expanded incrementally as each phase is implemented.
+------------------------------------------------------------------------
 
 ## Portfolio Scope
 
-**Implemented directly**
-- Architecture and repository design
-- Metadata models
-- PySpark and SQL transformations
-- Data-quality patterns
-- Pipeline configuration
-- Testing
-- Documentation
-- CI/CD definitions
-- Sample data and failure scenarios
+### Implemented
 
-**Simulated enterprise capabilities**
-- Multi-environment deployment
-- Group-based security
-- Production approval workflows
-- Operational support procedures
-- Disaster recovery
-- Cost and SLA monitoring
+-   Python engineering foundation
+-   Metadata framework
+-   Validation
+-   Logging
+-   Testing
+-   Documentation
 
-**Normally owned by a platform team**
-- Azure subscription governance
-- Network architecture
-- Enterprise identity federation
-- Production secret rotation
-- Central monitoring infrastructure
-- Organization-wide policy enforcement
+### Planned
 
-**Current Limitations**
-- Designed for a cost-conscious portfolio environment
-- Uses synthetic and non-sensitive sample data
-- Some Azure and Databricks components may be represented through code and documentation when live resources are unavailable
-- Enterprise-scale throughput is demonstrated through architecture and test strategy rather than real production volume
+-   Azure Lakehouse
+-   Databricks
+-   Streaming ingestion
+-   Delta Lake
+-   CI/CD
+-   Infrastructure as Code
 
-**Author**
-Christian Evangelista
+------------------------------------------------------------------------
+
+## Current Limitations
+
+-   Uses synthetic sample data.
+-   Azure resources are introduced incrementally.
+-   Enterprise scale is demonstrated through architecture and
+    engineering practices rather than production workloads.
+
+------------------------------------------------------------------------
+
+## Future Work
+
+-   Complete Medallion implementation
+-   CDC pipelines
+-   Streaming pipelines
+-   Data quality framework
+-   Observability dashboards
+-   Deployment automation
+
+------------------------------------------------------------------------
+
+## Contributing
+
+This repository is primarily a personal portfolio project. Suggestions
+and constructive feedback are welcome.
+
+------------------------------------------------------------------------
+
+## License
+
+Released under the MIT License.
+
+------------------------------------------------------------------------
+
+## Author
+
+**Christian Evangelista**
+
+Business Intelligence Analyst specializing in Data Engineering.
+
+This repository documents the journey of building a production-inspired
+Azure Lakehouse using modern software engineering practices while
+remaining transparent about implementation progress.
