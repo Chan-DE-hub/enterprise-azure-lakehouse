@@ -1,0 +1,15 @@
+﻿resources:
+  jobs:
+    bundle_smoke_test:
+      name: "Enterprise Lakehouse - Bundle Smoke Test"
+
+      tasks:
+        - task_key: run_smoke_test
+          environment_key: default
+          spark_python_task:
+            python_file: ../../src/enterprise_lakehouse/jobs/bundle_smoke_test.py
+
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "5"
