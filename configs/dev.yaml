@@ -1,0 +1,23 @@
+environment: dev
+application_name: enterprise-azure-lakehouse
+
+storage:
+  landing_path: abfss://landing@devlakehouse.dfs.core.windows.net/
+  bronze_path: abfss://bronze@devlakehouse.dfs.core.windows.net/
+  silver_path: abfss://silver@devlakehouse.dfs.core.windows.net/
+  gold_path: abfss://gold@devlakehouse.dfs.core.windows.net/
+  quarantine_path: abfss://quarantine@devlakehouse.dfs.core.windows.net/
+  checkpoint_path: abfss://checkpoints@devlakehouse.dfs.core.windows.net/
+  schema_location_path: abfss://schemas@devlakehouse.dfs.core.windows.net/
+
+catalog:
+  catalog_name: dev_sales_lakehouse
+  bronze_schema: bronze
+  silver_schema: silver
+  gold_schema: gold
+  config_schema: config
+  audit_schema: audit
+  quarantine_schema: quarantine
+
+logging:
+  level: INFO
