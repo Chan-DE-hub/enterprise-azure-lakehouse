@@ -1,9 +1,13 @@
 """Tests for the Bronze reader contract."""
 
+from datetime import UTC, datetime
+from inspect import signature
 from typing import Any
+from uuid import uuid4
 
 import pytest
 
+from enterprise_lakehouse.bronze.models import PipelineContext, SourceMetadata
 from enterprise_lakehouse.bronze.readers import BaseReader
 
 
@@ -18,8 +22,16 @@ class FakeReader(BaseReader):
     def source_type(self) -> str:
         return "fake"
 
-    def read(self, *, options: dict[str, Any]) -> Any:
-        return options
+    def read(
+        self,
+        *,
+        context: PipelineContext,
+        metadata: SourceMetadata,
+    ) -> Any:
+        return {
+            "context": context,
+            "metadata": metadata,
+        }
 
 
 def test_base_reader_cannot_be_instantiated() -> None:
@@ -41,11 +53,43 @@ def test_concrete_reader_exposes_source_type() -> None:
     assert reader.source_type == "fake"
 
 
+def test_read_contract_accepts_context_and_metadata() -> None:
+    """The reader contract must use Bronze domain models."""
+    parameters = signature(BaseReader.read).parameters
+
+    assert list(parameters) == [
+        "self",
+        "context",
+        "metadata",
+    ]
+
+
 def test_concrete_reader_returns_source_data() -> None:
     """A valid reader must implement the read operation."""
     reader = FakeReader()
-    options = {"path": "/Volumes/raw/orders"}
 
-    result = reader.read(options=options)
+    context = PipelineContext(
+        pipeline_name="bronze_ingestion",
+        run_id=uuid4(),
+        environment="test",
+        started_at=datetime.now(UTC),
+    )
+    metadata = SourceMetadata(
+        source_name="orders",
+        source_type="fake",
+        load_mode="incremental",
+        primary_keys=("order_id",),
+        watermark_column="updated_at",
+        event_timestamp_column="event_timestamp",
+        options={"path": "/Volumes/raw/orders"},
+    )
 
-    assert result == options
+    result = reader.read(
+        context=context,
+        metadata=metadata,
+    )
+
+    assert result == {
+        "context": context,
+        "metadata": metadata,
+    }

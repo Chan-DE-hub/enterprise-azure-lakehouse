@@ -3,6 +3,11 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+from enterprise_lakehouse.bronze.models import (
+    PipelineContext,
+    SourceMetadata,
+)
+
 
 class BaseReader(ABC):
     """Abstract contract implemented by every Bronze source reader.
@@ -18,16 +23,28 @@ class BaseReader(ABC):
         """Return the unique source type handled by this reader."""
 
     @abstractmethod
-    def read(self, *, options: dict[str, Any]) -> Any:
+    def read(
+        self,
+        *,
+        context: PipelineContext,
+        metadata: SourceMetadata,
+    ) -> Any:
         """Read data from the source.
 
         Args:
-            options: Source-specific read configuration.
+            context:
+                Execution context for the current pipeline run.
+
+            metadata:
+                Immutable metadata describing the configured source.
 
         Returns:
             The source data object consumed by the ingestion engine.
 
         Raises:
-            ValueError: If required options are missing or invalid.
-            RuntimeError: If the source cannot be read.
+            ValueError:
+                If the metadata is invalid.
+
+            RuntimeError:
+                If the source cannot be read.
         """
