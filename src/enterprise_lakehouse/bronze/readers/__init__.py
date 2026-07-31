@@ -7,6 +7,9 @@ from enterprise_lakehouse.bronze.readers.databricks_auto_loader import (
 from enterprise_lakehouse.bronze.readers.file_loader import FileLoader
 from enterprise_lakehouse.bronze.readers.file_reader import FileReader
 from enterprise_lakehouse.bronze.readers.loader_composer import LoaderComposer
+from enterprise_lakehouse.bronze.readers.metadata_file_reader import (
+    MetadataFileReader,
+)
 from enterprise_lakehouse.bronze.readers.spark_file_loader import SparkFileLoader
 
 __all__ = [
@@ -16,4 +19,5 @@ __all__ = [
     "SparkFileLoader",
     "DatabricksAutoLoader",
     "LoaderComposer",
+    "MetadataFileReader",
 ]
