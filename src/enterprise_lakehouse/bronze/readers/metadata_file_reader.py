@@ -1,8 +1,14 @@
 """Metadata-driven file reader composition."""
 
-from typing import Protocol
+from typing import Any, Protocol
 
+from enterprise_lakehouse.bronze.models import (
+    PipelineContext,
+    SourceMetadata,
+)
+from enterprise_lakehouse.bronze.readers.base_reader import BaseReader
 from enterprise_lakehouse.bronze.readers.file_loader import FileLoader
+from enterprise_lakehouse.bronze.readers.file_reader import FileReader
 
 
 class LoaderComposerProtocol(Protocol):
@@ -13,21 +19,35 @@ class LoaderComposerProtocol(Protocol):
         ...
 
 
-class MetadataProtocol(Protocol):
-    """Minimum metadata required for loader composition."""
-
-    ingestion_mode: str
-
-
-class MetadataFileReader:
-    """Select a file loader using source metadata."""
+class MetadataFileReader(BaseReader):
+    """Select and execute a file loader using source metadata."""
 
     def __init__(self, *, composer: LoaderComposerProtocol) -> None:
         """Initialize with a loader composer."""
         self._composer = composer
 
-    def compose_loader(self, *, metadata: MetadataProtocol) -> FileLoader:
-        """Compose the appropriate loader from metadata."""
+    @property
+    def source_type(self) -> str:
+        """Return the source type handled by this reader."""
+        return "file"
+
+    def compose_loader(self, *, metadata: SourceMetadata) -> FileLoader:
+        """Compose the appropriate loader from source metadata."""
         return self._composer.compose(
             ingestion_mode=metadata.ingestion_mode,
+        )
+
+    def read(
+        self,
+        *,
+        context: PipelineContext,
+        metadata: SourceMetadata,
+    ) -> Any:
+        """Select a loader and read the configured file source."""
+        loader = self.compose_loader(metadata=metadata)
+        reader = FileReader(loader=loader)
+
+        return reader.read(
+            context=context,
+            metadata=metadata,
         )

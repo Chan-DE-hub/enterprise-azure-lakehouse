@@ -1,5 +1,7 @@
 """Bronze ingestion orchestration engine."""
 
+from typing import Any
+
 from enterprise_lakehouse.bronze.models import PipelineContext
 from enterprise_lakehouse.bronze.readers import BaseReader
 from enterprise_lakehouse.bronze.repositories import MetadataRepository
@@ -26,15 +28,22 @@ class IngestionEngine:
         self,
         context: PipelineContext,
         source_name: str,
-    ) -> None:
+    ) -> Any:
         """Execute a Bronze ingestion run.
 
         Args:
-            context: Immutable execution context for the current pipeline run.
+            context:
+                Immutable execution context for the current pipeline run.
 
-        Raises:
-            NotImplementedError: Until orchestration behavior is implemented.
+            source_name:
+                Unique name used to retrieve the source metadata.
+
+        Returns:
+            The source data object returned by the configured reader.
         """
-        self._repository.load(source_name)
+        metadata = self._repository.load(source_name)
 
-        raise NotImplementedError("Bronze ingestion orchestration is not implemented yet.")
+        return self._reader.read(
+            context=context,
+            metadata=metadata,
+        )
