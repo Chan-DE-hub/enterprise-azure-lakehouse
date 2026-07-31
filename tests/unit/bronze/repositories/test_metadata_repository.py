@@ -14,6 +14,7 @@ def build_metadata() -> SourceMetadata:
     return SourceMetadata(
         source_name="sales_orders",
         source_type="file",
+        ingestion_mode="batch",
         load_mode="incremental",
         primary_keys=("order_id",),
         watermark_column="updated_at",

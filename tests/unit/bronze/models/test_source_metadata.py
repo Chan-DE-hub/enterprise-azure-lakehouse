@@ -13,6 +13,7 @@ def test_source_metadata_stores_source_configuration() -> None:
     metadata = SourceMetadata(
         source_name="sales_orders",
         source_type="file",
+        ingestion_mode="batch",
         load_mode="incremental",
         primary_keys=("order_id",),
         watermark_column="updated_at",
@@ -25,6 +26,7 @@ def test_source_metadata_stores_source_configuration() -> None:
 
     assert metadata.source_name == "sales_orders"
     assert metadata.source_type == "file"
+    assert metadata.ingestion_mode == "batch"
     assert metadata.load_mode == "incremental"
     assert metadata.primary_keys == ("order_id",)
     assert metadata.watermark_column == "updated_at"
@@ -39,6 +41,7 @@ def test_source_metadata_supports_optional_incremental_fields() -> None:
     metadata = SourceMetadata(
         source_name="product_master",
         source_type="file",
+        ingestion_mode="batch",
         load_mode="full",
         primary_keys=("product_id",),
         watermark_column=None,
@@ -56,6 +59,7 @@ def test_source_metadata_primary_keys_are_immutable() -> None:
     metadata = SourceMetadata(
         source_name="customers",
         source_type="jdbc",
+        ingestion_mode="batch",
         load_mode="incremental",
         primary_keys=("customer_id",),
         watermark_column="updated_at",
@@ -72,6 +76,7 @@ def test_source_metadata_options_are_read_only() -> None:
     metadata = SourceMetadata(
         source_name="sales_orders",
         source_type="file",
+        ingestion_mode="batch",
         load_mode="incremental",
         primary_keys=("order_id",),
         watermark_column="updated_at",
@@ -89,6 +94,7 @@ def test_source_metadata_is_immutable() -> None:
     metadata = SourceMetadata(
         source_name="sales_orders",
         source_type="file",
+        ingestion_mode="batch",
         load_mode="incremental",
         primary_keys=("order_id",),
         watermark_column="updated_at",
@@ -106,6 +112,7 @@ def test_equal_source_metadata_instances_compare_as_equal() -> None:
     first_metadata = SourceMetadata(
         source_name="sales_orders",
         source_type="file",
+        ingestion_mode="batch",
         load_mode="incremental",
         primary_keys=("order_id",),
         watermark_column="updated_at",
@@ -115,6 +122,7 @@ def test_equal_source_metadata_instances_compare_as_equal() -> None:
     second_metadata = SourceMetadata(
         source_name="sales_orders",
         source_type="file",
+        ingestion_mode="batch",
         load_mode="incremental",
         primary_keys=("order_id",),
         watermark_column="updated_at",
@@ -123,3 +131,19 @@ def test_equal_source_metadata_instances_compare_as_equal() -> None:
     )
 
     assert first_metadata == second_metadata
+
+
+def test_source_metadata_stores_ingestion_mode() -> None:
+    """Source metadata should preserve the configured ingestion mode."""
+    metadata = SourceMetadata(
+        source_name="sales_orders",
+        source_type="file",
+        ingestion_mode="batch",
+        load_mode="incremental",
+        primary_keys=("order_id",),
+        watermark_column="updated_at",
+        event_timestamp_column="event_timestamp",
+        options={"format": "parquet"},
+    )
+
+    assert metadata.ingestion_mode == "batch"
