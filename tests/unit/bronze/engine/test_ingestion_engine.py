@@ -4,8 +4,6 @@ from datetime import UTC, datetime
 from typing import Any, override
 from uuid import uuid4
 
-import pytest
-
 from enterprise_lakehouse.bronze.engine import IngestionEngine
 from enterprise_lakehouse.bronze.models import (
     PipelineContext,
@@ -20,10 +18,19 @@ class FakeReader(BaseReader):
 
     @property
     def source_type(self) -> str:
+        """Return the source type handled by the reader."""
         return "fake"
 
-    def read(self, *, options: dict[str, Any]) -> Any:
-        return options
+    def read(
+        self,
+        *,
+        context: PipelineContext,
+        metadata: SourceMetadata,
+    ) -> Any:
+        """Return metadata options as fake source data."""
+        del context
+
+        return metadata.options
 
 
 def create_metadata() -> SourceMetadata:
@@ -43,17 +50,22 @@ def create_metadata() -> SourceMetadata:
 class FakeMetadataRepository(MetadataRepository):
     """Repository used to test metadata loading."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        metadata: SourceMetadata | None = None,
+    ) -> None:
+        self.metadata = metadata or create_metadata()
         self.loaded_source_name: str | None = None
 
     @override
     def load(self, source_name: str) -> SourceMetadata:
+        """Return metadata for the requested source."""
         self.loaded_source_name = source_name
-        return create_metadata()
+        return self.metadata
 
 
 def create_context() -> PipelineContext:
-    """Create a reusable PipelineContext for engine tests."""
+    """Create a reusable pipeline context for engine tests."""
     return PipelineContext(
         pipeline_name="bronze_orders",
         run_id=uuid4(),
@@ -76,42 +88,36 @@ def test_engine_stores_reader_dependency() -> None:
 
 
 def test_run_accepts_pipeline_context() -> None:
-    """The skeleton run method should accept a PipelineContext."""
+    """The engine should delegate execution using the supplied context."""
     engine = IngestionEngine(
         reader=FakeReader(),
         repository=FakeMetadataRepository(),
     )
+
     context = create_context()
 
-    with pytest.raises(
-        NotImplementedError,
-        match="Bronze ingestion orchestration is not implemented yet",
-    ):
-        engine.run(
-            context=context,
-            source_name="sales_orders",
-        )
+    result = engine.run(
+        context=context,
+        source_name="sales_orders",
+    )
+
+    assert result == {"format": "parquet"}
 
 
 def test_engine_loads_metadata_for_requested_source() -> None:
-    """The engine should load metadata for the requested source name."""
-    reader = FakeReader()
+    """The engine should load metadata for the requested source."""
     repository = FakeMetadataRepository()
 
     engine = IngestionEngine(
-        reader=reader,
+        reader=FakeReader(),
         repository=repository,
     )
 
     context = create_context()
 
-    with pytest.raises(
-        NotImplementedError,
-        match="Bronze ingestion orchestration is not implemented yet",
-    ):
-        engine.run(
-            context=context,
-            source_name="sales_orders",
-        )
+    engine.run(
+        context=context,
+        source_name="sales_orders",
+    )
 
     assert repository.loaded_source_name == "sales_orders"
