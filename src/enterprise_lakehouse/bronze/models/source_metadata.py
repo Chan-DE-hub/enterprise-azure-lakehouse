@@ -12,6 +12,7 @@ class SourceMetadata:
 
     source_name: str
     source_type: str
+    ingestion_mode: str
     load_mode: str
     primary_keys: tuple[str, ...]
     watermark_column: str | None

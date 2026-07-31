@@ -54,6 +54,7 @@ def create_source_metadata(
     return SourceMetadata(
         source_name="orders",
         source_type="file",
+        ingestion_mode="batch",
         load_mode="incremental",
         primary_keys=("order_id",),
         watermark_column="updated_at",

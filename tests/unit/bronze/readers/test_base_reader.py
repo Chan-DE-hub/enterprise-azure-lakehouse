@@ -77,6 +77,7 @@ def test_concrete_reader_returns_source_data() -> None:
     metadata = SourceMetadata(
         source_name="orders",
         source_type="fake",
+        ingestion_mode="batch",
         load_mode="incremental",
         primary_keys=("order_id",),
         watermark_column="updated_at",
