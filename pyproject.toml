@@ -50,7 +50,7 @@ dev = [
     "mypy>=1.17",
     "pre-commit>=4.2",
     "types-pyyaml>=6.0.12.20260724",
-    "pyspark>=4.0,<5.0",
+    "pyspark==4.2.0",
 ]
 
 [tool.pytest.ini_options]
