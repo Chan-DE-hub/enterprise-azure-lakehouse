@@ -1,0 +1,13 @@
+﻿bundle:
+  name: enterprise-azure-lakehouse
+
+include:
+  - resources/*.yml
+  - resources/**/*.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      profile: DEFAULT
