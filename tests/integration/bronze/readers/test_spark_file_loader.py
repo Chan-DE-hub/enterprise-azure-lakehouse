@@ -1,27 +1,10 @@
 """Integration tests for the Spark file loader."""
 
-import os
-import sys
 from pathlib import Path
 
 from pyspark.sql import SparkSession
 
 from enterprise_lakehouse.bronze.readers import SparkFileLoader
-
-os.environ["PYSPARK_PYTHON"] = sys.executable
-os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
-
-
-def create_spark_session() -> SparkSession:
-    """Create a local Spark session for integration testing."""
-    return (
-        SparkSession.builder.master("local[1]")
-        .appName("spark-file-loader-integration-tests")
-        .config("spark.ui.enabled", "false")
-        .config("spark.pyspark.python", sys.executable)
-        .config("spark.pyspark.driver.python", sys.executable)
-        .getOrCreate()
-    )
 
 
 def write_csv_fixture(path: Path) -> None:
@@ -32,36 +15,34 @@ def write_csv_fixture(path: Path) -> None:
     )
 
 
-def test_spark_file_loader_reads_real_csv_file(tmp_path: Path) -> None:
+def test_spark_file_loader_reads_real_csv_file(
+    tmp_path: Path,
+    spark: SparkSession,
+) -> None:
     """The loader should read a CSV file into a real Spark DataFrame."""
     source_path = tmp_path / "sales_orders.csv"
     write_csv_fixture(source_path)
 
-    spark = create_spark_session()
+    loader = SparkFileLoader(spark=spark)
 
-    try:
-        loader = SparkFileLoader(spark=spark)
+    dataframe = loader(
+        path=source_path.as_uri(),
+        file_format="csv",
+        options={
+            "header": "true",
+            "inferSchema": "true",
+        },
+    )
 
-        dataframe = loader(
-            path=source_path.as_uri(),
-            file_format="csv",
-            options={
-                "header": "true",
-                "inferSchema": "true",
-            },
-        )
+    rows = dataframe.orderBy("order_id").collect()
 
-        rows = dataframe.orderBy("order_id").collect()
-
-        assert dataframe.columns == [
-            "order_id",
-            "customer_name",
-            "amount",
-        ]
-        assert len(rows) == 2
-        assert rows[0]["order_id"] == 1
-        assert rows[0]["customer_name"] == "Ana"
-        assert rows[0]["amount"] == 125.5
-        assert rows[1]["order_id"] == 2
-    finally:
-        spark.stop()
+    assert dataframe.columns == [
+        "order_id",
+        "customer_name",
+        "amount",
+    ]
+    assert len(rows) == 2
+    assert rows[0]["order_id"] == 1
+    assert rows[0]["customer_name"] == "Ana"
+    assert rows[0]["amount"] == 125.5
+    assert rows[1]["order_id"] == 2
