@@ -5,7 +5,7 @@ from enterprise_lakehouse.bronze.models import (
     BronzeWriteConfig,
     PipelineContext,
 )
-from enterprise_lakehouse.bronze.writers import BronzeDeltaWriter
+from enterprise_lakehouse.bronze.writers.bronze_writer import BronzeWriter
 
 
 class BronzePipeline:
@@ -15,7 +15,7 @@ class BronzePipeline:
         self,
         *,
         ingestion_engine: IngestionEngine,
-        writer: BronzeDeltaWriter,
+        writer: BronzeWriter,
     ) -> None:
         """Initialize the pipeline."""
         self._ingestion_engine = ingestion_engine
