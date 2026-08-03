@@ -5,6 +5,12 @@ include:
   - resources/*.yml
   - resources/**/*.yml
 
+artifacts:
+  default:
+    type: whl
+    build: uv build --wheel
+    path: .
+
 targets:
   dev:
     mode: development
