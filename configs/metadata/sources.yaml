@@ -5,7 +5,7 @@ sources:
 
     source_type: file
 
-    load_type: incremental
+    load_type: streaming
 
     enabled: true
 
@@ -17,6 +17,13 @@ sources:
     watermark_column: modified_at
 
     file_format: json
+
+    reader_options:
+      cloudFiles.schemaLocation: /Volumes/workspace/landing/source_files/_schemas/orders
+      cloudFiles.schemaEvolutionMode: addNewColumns
+      cloudFiles.inferColumnTypes: true
+      cloudFiles.includeExistingFiles: true
+      rescuedDataColumn: _rescued_data
 
     location:
       object_name: orders

@@ -16,7 +16,12 @@ from enterprise_lakehouse.bronze.models import (
 )
 from enterprise_lakehouse.bronze.pipeline import BronzePipeline
 from enterprise_lakehouse.bronze.readers import LoaderComposer, MetadataFileReader
-from enterprise_lakehouse.bronze.writers import BronzeDeltaWriter
+from enterprise_lakehouse.bronze.writers import (
+    BronzeDeltaWriter,
+    BronzeStreamingWriter,
+)
+from enterprise_lakehouse.common.metadata.models import LoadType, SourceMetadata
+from enterprise_lakehouse.common.metadata.repository import MetadataRepository
 from enterprise_lakehouse.common.metadata.yaml_repository import (
     YamlMetadataRepository,
 )
@@ -37,11 +42,10 @@ def get_spark_session() -> SparkSession:
 def build_pipeline(
     *,
     spark: SparkSession,
-    metadata_path: str,
+    repository: MetadataRepository,
+    metadata: SourceMetadata,
 ) -> BronzePipeline:
     """Compose the Bronze pipeline from production dependencies."""
-    repository = YamlMetadataRepository(metadata_path)
-
     composer = LoaderComposer(spark=spark)
     reader = MetadataFileReader(composer=composer)
 
@@ -50,7 +54,9 @@ def build_pipeline(
         repository=repository,
     )
 
-    writer = BronzeDeltaWriter()
+    writer = (
+        BronzeStreamingWriter() if metadata.load_type is LoadType.STREAMING else BronzeDeltaWriter()
+    )
 
     return BronzePipeline(
         ingestion_engine=ingestion_engine,
@@ -108,7 +114,8 @@ def main() -> None:
 
     pipeline = build_pipeline(
         spark=spark,
-        metadata_path=arguments.metadata_path,
+        repository=repository,
+        metadata=metadata,
     )
 
     context = PipelineContext(
@@ -118,6 +125,23 @@ def main() -> None:
         started_at=datetime.now(UTC),
     )
 
+    write_options: dict[str, str | bool] = {
+        "mergeSchema": "true",
+    }
+
+    if metadata.load_type is LoadType.STREAMING:
+        checkpoint_path = metadata.target.checkpoint_path
+
+        if checkpoint_path is None:
+            raise ValueError(
+                f"Checkpoint path is required for streaming source: {metadata.source_id}",
+            )
+
+        write_options = {
+            "checkpointLocation": checkpoint_path,
+            "trigger": "availableNow",
+        }
+
     write_config = BronzeWriteConfig(
         table_name=(
             f"{metadata.target.catalog_name}."
@@ -125,9 +149,7 @@ def main() -> None:
             f"{metadata.target.bronze_table}"
         ),
         mode="append",
-        options={
-            "mergeSchema": "true",
-        },
+        options=write_options,
     )
 
     pipeline.run(

@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from enterprise_lakehouse.common.metadata.models import LoadType
 from enterprise_lakehouse.jobs.bronze_job import (
     BronzeJobArguments,
     build_pipeline,
@@ -92,11 +93,13 @@ def test_get_spark_session_requires_active_session() -> None:
         get_spark_session()
 
 
-def test_build_pipeline_composes_production_dependencies() -> None:
-    """The job should compose the production Bronze pipeline dependencies."""
+def test_build_pipeline_composes_batch_writer() -> None:
+    """Batch metadata should compose the batch Delta writer."""
     spark = Mock()
-
     repository = Mock()
+    metadata = Mock()
+    metadata.load_type = LoadType.FULL
+
     composer = Mock()
     reader = Mock()
     ingestion_engine = Mock()
@@ -104,10 +107,6 @@ def test_build_pipeline_composes_production_dependencies() -> None:
     pipeline = Mock()
 
     with (
-        patch(
-            "enterprise_lakehouse.jobs.bronze_job.YamlMetadataRepository",
-            return_value=repository,
-        ) as repository_class,
         patch(
             "enterprise_lakehouse.jobs.bronze_job.LoaderComposer",
             return_value=composer,
@@ -131,12 +130,66 @@ def test_build_pipeline_composes_production_dependencies() -> None:
     ):
         result = build_pipeline(
             spark=spark,
-            metadata_path="/Volumes/dev/config/sources.yml",
+            repository=repository,
+            metadata=metadata,
         )
 
-    repository_class.assert_called_once_with(
-        "/Volumes/dev/config/sources.yml",
+    composer_class.assert_called_once_with(spark=spark)
+    reader_class.assert_called_once_with(composer=composer)
+    engine_class.assert_called_once_with(
+        reader=reader,
+        repository=repository,
     )
+    writer_class.assert_called_once_with()
+    pipeline_class.assert_called_once_with(
+        ingestion_engine=ingestion_engine,
+        writer=writer,
+    )
+
+    assert result is pipeline
+
+
+def test_build_pipeline_composes_streaming_writer() -> None:
+    """Streaming metadata should compose the streaming Delta writer."""
+    spark = Mock()
+    repository = Mock()
+    metadata = Mock()
+    metadata.load_type = LoadType.STREAMING
+
+    composer = Mock()
+    reader = Mock()
+    ingestion_engine = Mock()
+    writer = Mock()
+    pipeline = Mock()
+
+    with (
+        patch(
+            "enterprise_lakehouse.jobs.bronze_job.LoaderComposer",
+            return_value=composer,
+        ) as composer_class,
+        patch(
+            "enterprise_lakehouse.jobs.bronze_job.MetadataFileReader",
+            return_value=reader,
+        ) as reader_class,
+        patch(
+            "enterprise_lakehouse.jobs.bronze_job.IngestionEngine",
+            return_value=ingestion_engine,
+        ) as engine_class,
+        patch(
+            "enterprise_lakehouse.jobs.bronze_job.BronzeStreamingWriter",
+            return_value=writer,
+        ) as writer_class,
+        patch(
+            "enterprise_lakehouse.jobs.bronze_job.BronzePipeline",
+            return_value=pipeline,
+        ) as pipeline_class,
+    ):
+        result = build_pipeline(
+            spark=spark,
+            repository=repository,
+            metadata=metadata,
+        )
+
     composer_class.assert_called_once_with(spark=spark)
     reader_class.assert_called_once_with(composer=composer)
     engine_class.assert_called_once_with(
@@ -162,6 +215,7 @@ def test_main_runs_bronze_pipeline() -> None:
 
     spark = Mock()
     metadata = Mock()
+    metadata.load_type = LoadType.FULL
     metadata.target.catalog_name = "dev_sales_lakehouse"
     metadata.target.bronze_schema = "bronze"
     metadata.target.bronze_table = "sales_orders"
@@ -199,7 +253,8 @@ def test_main_runs_bronze_pipeline() -> None:
     repository.get.assert_called_once_with("sales_orders")
     build_pipeline_mock.assert_called_once_with(
         spark=spark,
-        metadata_path="/Volumes/dev/config/sources.yml",
+        repository=repository,
+        metadata=metadata,
     )
 
     pipeline.run.assert_called_once()
