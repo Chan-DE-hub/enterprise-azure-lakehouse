@@ -20,14 +20,20 @@ sources:
 
     location:
       object_name: orders
-      path: /Volumes/dev/landing/orders
+      path: /Volumes/workspace/landing/source_files/orders
 
     target:
-      catalog_name: dev_sales_lakehouse
+      catalog_name: workspace
+      bronze_schema: bronze
+      silver_schema: silver
+      gold_schema: gold
+      quarantine_schema: quarantine
+
       bronze_table: bronze_orders
       silver_table: silver_orders
-      checkpoint_path: /Volumes/dev/checkpoints/orders
-      schema_location_path: /Volumes/dev/schema/orders
+
+      checkpoint_path: /Volumes/workspace/landing/source_files/_checkpoints/orders
+      schema_location_path: /Volumes/workspace/landing/source_files/_schemas/orders
 
     governance:
       business_domain: sales
