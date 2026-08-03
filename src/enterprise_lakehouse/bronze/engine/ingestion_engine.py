@@ -4,7 +4,7 @@ from typing import Any
 
 from enterprise_lakehouse.bronze.models import PipelineContext
 from enterprise_lakehouse.bronze.readers import BaseReader
-from enterprise_lakehouse.bronze.repositories import MetadataRepository
+from enterprise_lakehouse.common.metadata.repository import MetadataRepository
 
 
 class IngestionEngine:
@@ -36,12 +36,12 @@ class IngestionEngine:
                 Immutable execution context for the current pipeline run.
 
             source_name:
-                Unique name used to retrieve the source metadata.
+                Unique source identifier used to retrieve metadata.
 
         Returns:
             The source data object returned by the configured reader.
         """
-        metadata = self._repository.load(source_name)
+        metadata = self._repository.get(source_name)
 
         return self._reader.read(
             context=context,

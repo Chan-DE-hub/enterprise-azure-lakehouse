@@ -2,13 +2,14 @@
 
 from typing import Any, Protocol
 
-from enterprise_lakehouse.bronze.models import (
-    PipelineContext,
-    SourceMetadata,
-)
+from enterprise_lakehouse.bronze.models import PipelineContext
 from enterprise_lakehouse.bronze.readers.base_reader import BaseReader
 from enterprise_lakehouse.bronze.readers.file_loader import FileLoader
 from enterprise_lakehouse.bronze.readers.file_reader import FileReader
+from enterprise_lakehouse.common.metadata.models import (
+    LoadType,
+    SourceMetadata,
+)
 
 
 class LoaderComposerProtocol(Protocol):
@@ -20,7 +21,7 @@ class LoaderComposerProtocol(Protocol):
 
 
 class MetadataFileReader(BaseReader):
-    """Select and execute a file loader using source metadata."""
+    """Select and execute a file loader using canonical source metadata."""
 
     def __init__(self, *, composer: LoaderComposerProtocol) -> None:
         """Initialize with a loader composer."""
@@ -33,8 +34,10 @@ class MetadataFileReader(BaseReader):
 
     def compose_loader(self, *, metadata: SourceMetadata) -> FileLoader:
         """Compose the appropriate loader from source metadata."""
+        ingestion_mode = "streaming" if metadata.load_type is LoadType.STREAMING else "batch"
+
         return self._composer.compose(
-            ingestion_mode=metadata.ingestion_mode,
+            ingestion_mode=ingestion_mode,
         )
 
     def read(

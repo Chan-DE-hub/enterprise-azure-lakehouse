@@ -7,8 +7,17 @@ from uuid import uuid4
 
 import pytest
 
-from enterprise_lakehouse.bronze.models import PipelineContext, SourceMetadata
+from enterprise_lakehouse.bronze.models import PipelineContext
 from enterprise_lakehouse.bronze.readers.file_reader import FileReader
+from enterprise_lakehouse.common.metadata.models import (
+    FileFormat,
+    GovernanceMetadata,
+    LoadType,
+    SourceLocation,
+    SourceMetadata,
+    SourceType,
+    TargetMetadata,
+)
 
 
 class FakeFileLoader:
@@ -48,19 +57,42 @@ def create_pipeline_context() -> PipelineContext:
 
 def create_source_metadata(
     *,
-    options: Mapping[str, Any],
+    path: str | None = "/Volumes/raw/orders",
+    file_format: FileFormat | None = FileFormat.PARQUET,
+    reader_options: dict[str, str | int | float | bool] | None = None,
 ) -> SourceMetadata:
-    """Create file-source metadata for reader tests."""
-    return SourceMetadata(
-        source_name="orders",
-        source_type="file",
-        ingestion_mode="batch",
-        load_mode="incremental",
-        primary_keys=("order_id",),
-        watermark_column="updated_at",
-        event_timestamp_column="event_timestamp",
-        options=options,
-    )
+    """Create canonical file-source metadata for reader tests."""
+    values = {
+        "source_id": "orders",
+        "source_system": "erp",
+        "source_type": SourceType.FILE,
+        "load_type": LoadType.FULL,
+        "location": SourceLocation(
+            object_name="orders",
+            path=path,
+        ),
+        "target": TargetMetadata(
+            catalog_name="dev_sales_lakehouse",
+            bronze_table="orders",
+        ),
+        "governance": GovernanceMetadata(
+            business_domain="sales",
+            owner="data_engineering",
+        ),
+        "primary_keys": ("order_id",),
+        "event_timestamp_column": "event_timestamp",
+        "file_format": file_format,
+        "reader_options": reader_options or {},
+        "enabled": True,
+        "priority": 100,
+    }
+
+    if path is None or file_format is None:
+        # Deliberately bypass model validation to verify the reader's
+        # defensive checks independently of metadata validation.
+        return SourceMetadata.model_construct(**values)
+
+    return SourceMetadata(**values)
 
 
 def test_file_reader_exposes_file_source_type() -> None:
@@ -71,16 +103,14 @@ def test_file_reader_exposes_file_source_type() -> None:
 
 
 def test_file_reader_delegates_to_file_loader() -> None:
-    """The reader must delegate source loading using metadata options."""
+    """The reader must delegate using canonical metadata fields."""
     loader = FakeFileLoader()
     reader = FileReader(loader=loader)
 
     metadata = create_source_metadata(
-        options={
-            "path": "/Volumes/raw/orders",
-            "format": "parquet",
+        reader_options={
             "mergeSchema": "true",
-        }
+        },
     )
 
     result = reader.read(
@@ -93,25 +123,23 @@ def test_file_reader_delegates_to_file_loader() -> None:
         {
             "path": "/Volumes/raw/orders",
             "file_format": "parquet",
-            "options": {"mergeSchema": "true"},
+            "options": {
+                "mergeSchema": "true",
+            },
         }
     ]
 
 
-def test_file_reader_requires_path_option() -> None:
-    """The reader must require a configured file path."""
+def test_file_reader_requires_source_path() -> None:
+    """The reader must reject metadata without a source path."""
     loader = FakeFileLoader()
     reader = FileReader(loader=loader)
 
-    metadata = create_source_metadata(
-        options={
-            "format": "parquet",
-        }
-    )
+    metadata = create_source_metadata(path=None)
 
     with pytest.raises(
         ValueError,
-        match="Missing required metadata option: path",
+        match="Missing source path for file source: orders",
     ):
         reader.read(
             context=create_pipeline_context(),
@@ -121,20 +149,16 @@ def test_file_reader_requires_path_option() -> None:
     assert loader.calls == []
 
 
-def test_file_reader_requires_format_option() -> None:
-    """The reader must require a configured file format."""
+def test_file_reader_requires_file_format() -> None:
+    """The reader must reject metadata without a file format."""
     loader = FakeFileLoader()
     reader = FileReader(loader=loader)
 
-    metadata = create_source_metadata(
-        options={
-            "path": "/Volumes/raw/orders",
-        }
-    )
+    metadata = create_source_metadata(file_format=None)
 
     with pytest.raises(
         ValueError,
-        match="Missing required metadata option: format",
+        match="Missing file format for file source: orders",
     ):
         reader.read(
             context=create_pipeline_context(),

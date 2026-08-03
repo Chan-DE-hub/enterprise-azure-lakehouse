@@ -3,10 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from enterprise_lakehouse.bronze.models import (
-    PipelineContext,
-    SourceMetadata,
-)
+from enterprise_lakehouse.bronze.models import PipelineContext
+from enterprise_lakehouse.common.metadata.models import SourceMetadata
 
 
 class BaseReader(ABC):

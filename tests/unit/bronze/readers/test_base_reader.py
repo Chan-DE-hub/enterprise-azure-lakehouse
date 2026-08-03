@@ -7,8 +7,18 @@ from uuid import uuid4
 
 import pytest
 
-from enterprise_lakehouse.bronze.models import PipelineContext, SourceMetadata
+from enterprise_lakehouse.bronze.models import PipelineContext
 from enterprise_lakehouse.bronze.readers import BaseReader
+from enterprise_lakehouse.common.metadata.models import (
+    DataClassification,
+    FileFormat,
+    GovernanceMetadata,
+    LoadType,
+    SourceLocation,
+    SourceMetadata,
+    SourceType,
+    TargetMetadata,
+)
 
 
 class IncompleteReader(BaseReader):
@@ -20,6 +30,7 @@ class FakeReader(BaseReader):
 
     @property
     def source_type(self) -> str:
+        """Return the source type handled by this reader."""
         return "fake"
 
     def read(
@@ -28,10 +39,37 @@ class FakeReader(BaseReader):
         context: PipelineContext,
         metadata: SourceMetadata,
     ) -> Any:
+        """Return the supplied context and metadata."""
         return {
             "context": context,
             "metadata": metadata,
         }
+
+
+def create_metadata() -> SourceMetadata:
+    """Create canonical source metadata for reader tests."""
+    return SourceMetadata(
+        source_id="orders",
+        source_system="erp",
+        source_type=SourceType.FILE,
+        load_type=LoadType.FULL,
+        location=SourceLocation(
+            object_name="orders",
+            path="/Volumes/raw/orders",
+        ),
+        target=TargetMetadata(
+            catalog_name="dev_sales_lakehouse",
+            bronze_table="orders",
+        ),
+        governance=GovernanceMetadata(
+            business_domain="sales",
+            owner="data_engineering",
+            data_classification=DataClassification.INTERNAL,
+        ),
+        primary_keys=("order_id",),
+        event_timestamp_column="event_timestamp",
+        file_format=FileFormat.PARQUET,
+    )
 
 
 def test_base_reader_cannot_be_instantiated() -> None:
@@ -54,7 +92,7 @@ def test_concrete_reader_exposes_source_type() -> None:
 
 
 def test_read_contract_accepts_context_and_metadata() -> None:
-    """The reader contract must use Bronze domain models."""
+    """The reader contract must accept context and canonical metadata."""
     parameters = signature(BaseReader.read).parameters
 
     assert list(parameters) == [
@@ -74,16 +112,7 @@ def test_concrete_reader_returns_source_data() -> None:
         environment="test",
         started_at=datetime.now(UTC),
     )
-    metadata = SourceMetadata(
-        source_name="orders",
-        source_type="fake",
-        ingestion_mode="batch",
-        load_mode="incremental",
-        primary_keys=("order_id",),
-        watermark_column="updated_at",
-        event_timestamp_column="event_timestamp",
-        options={"path": "/Volumes/raw/orders"},
-    )
+    metadata = create_metadata()
 
     result = reader.read(
         context=context,

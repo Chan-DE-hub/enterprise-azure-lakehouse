@@ -5,12 +5,18 @@ from typing import Any, override
 from uuid import uuid4
 
 from enterprise_lakehouse.bronze.engine import IngestionEngine
-from enterprise_lakehouse.bronze.models import (
-    PipelineContext,
-    SourceMetadata,
-)
+from enterprise_lakehouse.bronze.models import PipelineContext
 from enterprise_lakehouse.bronze.readers import BaseReader
-from enterprise_lakehouse.bronze.repositories import MetadataRepository
+from enterprise_lakehouse.common.metadata.models import (
+    FileFormat,
+    GovernanceMetadata,
+    LoadType,
+    SourceLocation,
+    SourceMetadata,
+    SourceType,
+    TargetMetadata,
+)
+from enterprise_lakehouse.common.metadata.repository import MetadataRepository
 
 
 class FakeReader(BaseReader):
@@ -27,41 +33,62 @@ class FakeReader(BaseReader):
         context: PipelineContext,
         metadata: SourceMetadata,
     ) -> Any:
-        """Return metadata options as fake source data."""
+        """Return metadata reader options as fake source data."""
         del context
 
-        return metadata.options
+        return dict(metadata.reader_options)
 
 
 def create_metadata() -> SourceMetadata:
-    """Create reusable source metadata for engine tests."""
+    """Create reusable canonical source metadata for engine tests."""
     return SourceMetadata(
-        source_name="sales_orders",
-        source_type="file",
-        ingestion_mode="batch",
-        load_mode="incremental",
+        source_id="sales_orders",
+        source_system="erp",
+        source_type=SourceType.FILE,
+        load_type=LoadType.INCREMENTAL,
+        location=SourceLocation(
+            object_name="sales_orders",
+            path="/Volumes/raw/sales_orders",
+        ),
+        target=TargetMetadata(
+            catalog_name="dev_sales_lakehouse",
+            bronze_table="sales_orders",
+        ),
+        governance=GovernanceMetadata(
+            business_domain="sales",
+            owner="data_engineering",
+        ),
         primary_keys=("order_id",),
         watermark_column="updated_at",
         event_timestamp_column="event_timestamp",
-        options={"format": "parquet"},
+        file_format=FileFormat.PARQUET,
+        reader_options={
+            "mergeSchema": "true",
+        },
     )
 
 
 class FakeMetadataRepository(MetadataRepository):
-    """Repository used to test metadata loading."""
+    """Repository used to test canonical metadata lookup."""
 
     def __init__(
         self,
         metadata: SourceMetadata | None = None,
     ) -> None:
+        """Initialize the repository with reusable source metadata."""
         self.metadata = metadata or create_metadata()
-        self.loaded_source_name: str | None = None
+        self.requested_source_id: str | None = None
 
     @override
-    def load(self, source_name: str) -> SourceMetadata:
-        """Return metadata for the requested source."""
-        self.loaded_source_name = source_name
-        return self.metadata
+    def load(self) -> list[SourceMetadata]:
+        """Return all configured metadata definitions."""
+        return [self.metadata]
+
+    @override
+    def get(self, source_id: str) -> SourceMetadata:
+        """Record and return the requested source metadata."""
+        self.requested_source_id = source_id
+        return super().get(source_id)
 
 
 def create_context() -> PipelineContext:
@@ -94,18 +121,18 @@ def test_run_accepts_pipeline_context() -> None:
         repository=FakeMetadataRepository(),
     )
 
-    context = create_context()
-
     result = engine.run(
-        context=context,
+        context=create_context(),
         source_name="sales_orders",
     )
 
-    assert result == {"format": "parquet"}
+    assert result == {
+        "mergeSchema": "true",
+    }
 
 
 def test_engine_loads_metadata_for_requested_source() -> None:
-    """The engine should load metadata for the requested source."""
+    """The engine should request metadata using the supplied source ID."""
     repository = FakeMetadataRepository()
 
     engine = IngestionEngine(
@@ -113,11 +140,9 @@ def test_engine_loads_metadata_for_requested_source() -> None:
         repository=repository,
     )
 
-    context = create_context()
-
     engine.run(
-        context=context,
+        context=create_context(),
         source_name="sales_orders",
     )
 
-    assert repository.loaded_source_name == "sales_orders"
+    assert repository.requested_source_id == "sales_orders"

@@ -110,6 +110,10 @@ class SourceMetadata(MetadataModel):
     event_timestamp_column: str | None = None
     file_format: FileFormat | None = None
 
+    reader_options: dict[str, str | int | float | bool] = Field(
+        default_factory=dict,
+    )
+
     enabled: bool = True
     priority: int = Field(default=100, ge=1, le=999)
 
@@ -120,6 +124,11 @@ class SourceMetadata(MetadataModel):
         if self.source_type is SourceType.FILE and self.file_format is None:
             raise ValueError(
                 "file_format is required when source_type is 'file'",
+            )
+
+        if self.source_type is SourceType.FILE and self.location.path is None:
+            raise ValueError(
+                "path is required when source_type is 'file'",
             )
 
         if self.load_type is LoadType.INCREMENTAL and self.watermark_column is None:

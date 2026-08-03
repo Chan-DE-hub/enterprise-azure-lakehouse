@@ -2,12 +2,10 @@
 
 from typing import Any
 
-from enterprise_lakehouse.bronze.models import (
-    PipelineContext,
-    SourceMetadata,
-)
+from enterprise_lakehouse.bronze.models import PipelineContext
 from enterprise_lakehouse.bronze.readers.base_reader import BaseReader
 from enterprise_lakehouse.bronze.readers.file_loader import FileLoader
+from enterprise_lakehouse.common.metadata.models import SourceMetadata
 
 
 class FileReader(BaseReader):
@@ -32,23 +30,26 @@ class FileReader(BaseReader):
         context: PipelineContext,
         metadata: SourceMetadata,
     ) -> Any:
-        """Load a file using the configured loader."""
+        """Load a file using canonical source metadata."""
         # Reserved for future run-scoped logging, tracing, and metrics.
         del context
 
-        options = dict(metadata.options)
+        path = metadata.location.path
 
-        if "path" not in options:
-            raise ValueError("Missing required metadata option: path")
+        if path is None:
+            raise ValueError(
+                f"Missing source path for file source: {metadata.source_id}",
+            )
 
-        if "format" not in options:
-            raise ValueError("Missing required metadata option: format")
+        file_format = metadata.file_format
 
-        path = options.pop("path")
-        file_format = options.pop("format")
+        if file_format is None:
+            raise ValueError(
+                f"Missing file format for file source: {metadata.source_id}",
+            )
 
         return self._loader(
             path=path,
-            file_format=file_format,
-            options=options,
+            file_format=file_format.value,
+            options=dict(metadata.reader_options),
         )
