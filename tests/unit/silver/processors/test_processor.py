@@ -2,10 +2,11 @@
 
 from inspect import signature
 
-from enterprise_lakehouse.silver.processors.orders_standardization_processor import (
-    OrdersStandardizationProcessor,
-)
+from enterprise_lakehouse.silver.models import StandardizationRule
 from enterprise_lakehouse.silver.processors.processor import Processor
+from enterprise_lakehouse.silver.processors.standardization_processor import (
+    StandardizationProcessor,
+)
 
 
 def test_processor_contract_exposes_process_signature() -> None:
@@ -18,11 +19,18 @@ def test_processor_contract_exposes_process_signature() -> None:
     ]
 
 
-def test_orders_standardization_processor_satisfies_contract() -> None:
-    """The orders standardization processor must satisfy the protocol."""
-    processor: Processor = OrdersStandardizationProcessor()
+def test_standardization_processor_satisfies_contract() -> None:
+    """The generic standardization processor must satisfy the protocol."""
+    processor: Processor = StandardizationProcessor(
+        rules=(
+            StandardizationRule(
+                column_name="order_id",
+                data_type="long",
+            ),
+        )
+    )
 
     assert isinstance(
         processor,
-        OrdersStandardizationProcessor,
+        StandardizationProcessor,
     )

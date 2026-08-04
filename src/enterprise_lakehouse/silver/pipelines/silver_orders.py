@@ -4,9 +4,10 @@ from pyspark import pipelines as dp
 from pyspark.sql import DataFrame, SparkSession
 
 from enterprise_lakehouse.silver.pipelines import SilverPipeline
-from enterprise_lakehouse.silver.processors import (
-    OrdersStandardizationProcessor,
+from enterprise_lakehouse.silver.pipelines.silver_orders_config import (
+    build_standardization_rules,
 )
+from enterprise_lakehouse.silver.processors import StandardizationProcessor
 
 
 def get_spark_session() -> SparkSession:
@@ -34,7 +35,11 @@ def silver_orders() -> DataFrame:
     )
 
     pipeline = SilverPipeline(
-        processors=(OrdersStandardizationProcessor(),),
+        processors=(
+            StandardizationProcessor(
+                rules=build_standardization_rules(),
+            ),
+        ),
     )
 
     return pipeline.run(source_dataframe)
