@@ -1,0 +1,6 @@
+resources:
+  schemas:
+    silver:
+      name: silver
+      catalog_name: workspace
+      comment: "Validated, typed, and deduplicated Silver datasets."
