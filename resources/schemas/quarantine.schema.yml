@@ -1,0 +1,6 @@
+resources:
+  schemas:
+    quarantine:
+      name: quarantine
+      catalog_name: workspace
+      comment: "Invalid Silver records preserved for investigation and recovery."
