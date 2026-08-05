@@ -42,6 +42,26 @@ sources:
       checkpoint_path: /Volumes/workspace/landing/source_files/_checkpoints/orders
       schema_location_path: /Volumes/workspace/landing/source_files/_schemas/orders
 
+    standardization:
+      columns:
+        - source_column: order_id
+          data_type: long
+
+        - source_column: customer_id
+          data_type: long
+
+        - source_column: order_total
+          data_type: decimal(18,2)
+
+        - source_column: modified_at
+          data_type: timestamp
+
+        - source_column: order_status
+          data_type: string
+          trim: true
+          text_case: lower
+
+
     governance:
       business_domain: sales
       owner: data-platform

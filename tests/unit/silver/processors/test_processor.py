@@ -24,7 +24,7 @@ def test_standardization_processor_satisfies_contract() -> None:
     processor: Processor = StandardizationProcessor(
         rules=(
             StandardizationRule(
-                column_name="order_id",
+                source_column="order_id",
                 data_type="long",
             ),
         )

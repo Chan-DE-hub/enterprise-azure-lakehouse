@@ -12,6 +12,10 @@ from enterprise_lakehouse.common.metadata import (
     SourceType,
     TargetMetadata,
 )
+from enterprise_lakehouse.common.metadata.models import (
+    StandardizationColumnMetadata,
+    TextCase,
+)
 
 
 def create_target_metadata(
@@ -181,3 +185,85 @@ def test_metadata_is_immutable() -> None:
 
     with pytest.raises(ValidationError, match="frozen"):
         metadata.object_name = "customers"
+
+
+def test_source_metadata_stores_silver_standardization_rules() -> None:
+    """Source metadata should store typed Silver standardization rules."""
+    metadata = SourceMetadata(
+        source_id="sales_orders",
+        source_system="sales",
+        source_type="file",
+        load_type="streaming",
+        file_format="json",
+        location={
+            "object_name": "orders",
+            "path": "/Volumes/workspace/landing/source_files/orders",
+        },
+        target={
+            "catalog_name": "workspace",
+            "bronze_table": "bronze_orders",
+            "silver_table": "silver_orders",
+            "checkpoint_path": "/Volumes/workspace/checkpoints/orders",
+        },
+        governance={
+            "business_domain": "sales",
+            "owner": "data-platform",
+        },
+        standardization={
+            "columns": [
+                {
+                    "source_column": "order_id",
+                    "data_type": "long",
+                },
+                {
+                    "source_column": "order_status",
+                    "data_type": "string",
+                    "trim": True,
+                    "text_case": "lower",
+                },
+            ]
+        },
+    )
+
+    assert len(metadata.standardization.columns) == 2
+    assert metadata.standardization.columns[0].source_column == "order_id"
+    assert metadata.standardization.columns[1].trim is True
+    assert metadata.standardization.columns[1].text_case is TextCase.LOWER
+
+
+def test_standardization_column_metadata_supports_rename_and_text_case() -> None:
+    """Column metadata should support technical Silver normalization."""
+    column = StandardizationColumnMetadata(
+        source_column="Order Status",
+        target_column="order_status",
+        data_type="string",
+        trim=True,
+        text_case="lower",
+    )
+
+    assert column.source_column == "Order Status"
+    assert column.target_column == "order_status"
+    assert column.data_type == "string"
+    assert column.trim is True
+    assert column.text_case is TextCase.LOWER
+
+
+def test_standardization_column_metadata_defaults_target_to_source() -> None:
+    """The source column should remain the target when no rename is configured."""
+    column = StandardizationColumnMetadata(
+        source_column="order_id",
+        data_type="long",
+    )
+
+    assert column.resolved_target_column == "order_id"
+
+
+def test_standardization_column_metadata_supports_parse_format() -> None:
+    """Date and timestamp rules should support an explicit parse format."""
+    column = StandardizationColumnMetadata(
+        source_column="modified_at",
+        data_type="timestamp",
+        parse_format="yyyy-MM-dd'T'HH:mm:ssX",
+    )
+
+    assert column.parse_format == "yyyy-MM-dd'T'HH:mm:ssX"
