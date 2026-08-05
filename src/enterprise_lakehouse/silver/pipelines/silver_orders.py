@@ -8,9 +8,15 @@ from enterprise_lakehouse.common.metadata.yaml_repository import (
     YamlMetadataRepository,
 )
 from enterprise_lakehouse.silver.expectations import ExpectationRuleFactory
-from enterprise_lakehouse.silver.metadata import StandardizationRuleFactory
+from enterprise_lakehouse.silver.metadata import (
+    DeduplicationRuleFactory,
+    StandardizationRuleFactory,
+)
 from enterprise_lakehouse.silver.pipelines import SilverPipeline
-from enterprise_lakehouse.silver.processors import StandardizationProcessor
+from enterprise_lakehouse.silver.processors import (
+    DeduplicationProcessor,
+    StandardizationProcessor,
+)
 from enterprise_lakehouse.silver.quarantine import (
     QuarantineRuleFactory,
     build_quarantine_table_name,
@@ -26,6 +32,10 @@ metadata = repository.get(SOURCE_ID)
 standardization_rules = StandardizationRuleFactory().build(
     metadata.standardization,
 )
+
+deduplication_rule = DeduplicationRuleFactory(
+    watermark_delay="10 minutes",
+).build(metadata)
 
 expectation_rules = ExpectationRuleFactory().build(
     metadata.data_quality,
@@ -46,9 +56,11 @@ if metadata.target.silver_table is None:
     )
 
 silver_table_name = metadata.target.silver_table
+
 quarantine_table_name = build_quarantine_table_name(
     silver_table_name,
 )
+
 quarantine_table_identifier = (
     f"{metadata.target.catalog_name}.{metadata.target.quarantine_schema}.{quarantine_table_name}"
 )
@@ -73,7 +85,7 @@ def get_spark_session() -> SparkSession:
     all_expectation_rules,
 )
 def standardized_orders() -> DataFrame:
-    """Standardize orders and mark records requiring quarantine."""
+    """Standardize, deduplicate, and classify orders for routing."""
     spark = get_spark_session()
 
     source_table = (
@@ -88,6 +100,9 @@ def standardized_orders() -> DataFrame:
         processors=(
             StandardizationProcessor(
                 rules=standardization_rules,
+            ),
+            DeduplicationProcessor(
+                rule=deduplication_rule,
             ),
         ),
     )
@@ -105,7 +120,7 @@ def standardized_orders() -> DataFrame:
 
 @dp.table(
     name=silver_table_name,
-    comment="Typed, standardized, and validated sales orders.",
+    comment="Typed, standardized, deduplicated, and validated sales orders.",
 )
 def silver_orders() -> DataFrame:
     """Publish trusted Silver orders."""

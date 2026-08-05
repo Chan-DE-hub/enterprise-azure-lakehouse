@@ -2,11 +2,15 @@
 
 from inspect import signature
 
-from enterprise_lakehouse.silver.models import StandardizationRule
-from enterprise_lakehouse.silver.processors.processor import Processor
-from enterprise_lakehouse.silver.processors.standardization_processor import (
+from enterprise_lakehouse.silver.models import (
+    DeduplicationRule,
+    StandardizationRule,
+)
+from enterprise_lakehouse.silver.processors import (
+    DeduplicationProcessor,
     StandardizationProcessor,
 )
+from enterprise_lakehouse.silver.processors.processor import Processor
 
 
 def test_processor_contract_exposes_process_signature() -> None:
@@ -33,4 +37,20 @@ def test_standardization_processor_satisfies_contract() -> None:
     assert isinstance(
         processor,
         StandardizationProcessor,
+    )
+
+
+def test_deduplication_processor_satisfies_contract() -> None:
+    """The generic deduplication processor must satisfy the protocol."""
+    processor: Processor = DeduplicationProcessor(
+        rule=DeduplicationRule(
+            keys=("order_id",),
+            event_time_column="modified_at",
+            watermark_delay="10 minutes",
+        ),
+    )
+
+    assert isinstance(
+        processor,
+        DeduplicationProcessor,
     )
