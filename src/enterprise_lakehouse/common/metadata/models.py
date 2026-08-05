@@ -52,6 +52,13 @@ class TextCase(StrEnum):
     UPPER = "upper"
 
 
+class ExpectationAction(StrEnum):
+    """Supported Lakeflow expectation actions."""
+
+    RETAIN = "retain"
+    DROP = "drop"
+
+
 class MetadataModel(BaseModel):
     """Base model for strict metadata validation."""
 
@@ -122,6 +129,20 @@ class GovernanceMetadata(MetadataModel):
     sla_minutes: int | None = Field(default=None, gt=0)
 
 
+class ExpectationMetadata(MetadataModel):
+    """Configuration for one Silver data-quality expectation."""
+
+    name: str = Field(min_length=1)
+    constraint: str = Field(min_length=1)
+    action: ExpectationAction
+
+
+class DataQualityMetadata(MetadataModel):
+    """Data-quality expectations configured for one source."""
+
+    expectations: tuple[ExpectationMetadata, ...] = ()
+
+
 class SourceMetadata(MetadataModel):
     """Complete metadata contract for one source dataset."""
 
@@ -140,6 +161,10 @@ class SourceMetadata(MetadataModel):
     operation_column: str | None = None
     event_timestamp_column: str | None = None
     file_format: FileFormat | None = None
+
+    data_quality: DataQualityMetadata = Field(
+        default_factory=DataQualityMetadata,
+    )
 
     reader_options: dict[str, str | int | float | bool] = Field(
         default_factory=dict,

@@ -61,6 +61,27 @@ sources:
           trim: true
           text_case: lower
 
+    data_quality:
+      expectations:
+        - name: valid_order_id
+          constraint: order_id IS NOT NULL
+          action: drop
+
+        - name: valid_customer_id
+          constraint: customer_id IS NOT NULL
+          action: drop
+
+        - name: valid_modified_at
+          constraint: modified_at IS NOT NULL
+          action: drop
+
+        - name: positive_order_total
+          constraint: order_total >= 0
+          action: drop
+
+        - name: known_order_status
+          constraint: order_status IS NOT NULL
+          action: retain
 
     governance:
       business_domain: sales

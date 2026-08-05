@@ -13,6 +13,7 @@ from enterprise_lakehouse.common.metadata import (
     TargetMetadata,
 )
 from enterprise_lakehouse.common.metadata.models import (
+    ExpectationAction,
     StandardizationColumnMetadata,
     TextCase,
 )
@@ -267,3 +268,50 @@ def test_standardization_column_metadata_supports_parse_format() -> None:
     )
 
     assert column.parse_format == "yyyy-MM-dd'T'HH:mm:ssX"
+
+
+def test_source_metadata_stores_data_quality_expectations() -> None:
+    """Source metadata should store typed Silver data-quality expectations."""
+    metadata = SourceMetadata(
+        source_id="sales_orders",
+        source_system="sales",
+        source_type="file",
+        load_type="streaming",
+        file_format="json",
+        location={
+            "object_name": "orders",
+            "path": "/Volumes/workspace/landing/source_files/orders",
+        },
+        target={
+            "catalog_name": "workspace",
+            "bronze_table": "bronze_orders",
+            "silver_table": "silver_orders",
+            "checkpoint_path": "/Volumes/workspace/checkpoints/orders",
+        },
+        governance={
+            "business_domain": "sales",
+            "owner": "data-platform",
+        },
+        data_quality={
+            "expectations": [
+                {
+                    "name": "valid_order_id",
+                    "constraint": "order_id IS NOT NULL",
+                    "action": "drop",
+                },
+                {
+                    "name": "known_order_status",
+                    "constraint": "order_status IS NOT NULL",
+                    "action": "retain",
+                },
+            ]
+        },
+    )
+
+    assert len(metadata.data_quality.expectations) == 2
+
+    assert metadata.data_quality.expectations[0].name == "valid_order_id"
+    assert metadata.data_quality.expectations[0].constraint == "order_id IS NOT NULL"
+    assert metadata.data_quality.expectations[0].action is ExpectationAction.DROP
+
+    assert metadata.data_quality.expectations[1].action is ExpectationAction.RETAIN

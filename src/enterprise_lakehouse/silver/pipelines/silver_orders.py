@@ -6,12 +6,24 @@ from pyspark.sql import DataFrame, SparkSession
 from enterprise_lakehouse.common.metadata.yaml_repository import (
     YamlMetadataRepository,
 )
+from enterprise_lakehouse.silver.expectations import ExpectationRuleFactory
 from enterprise_lakehouse.silver.metadata import StandardizationRuleFactory
 from enterprise_lakehouse.silver.pipelines import SilverPipeline
 from enterprise_lakehouse.silver.processors import StandardizationProcessor
 
 SOURCE_ID = "sales_orders"
 METADATA_PATH = "/Volumes/workspace/landing/source_files/config/sources.yaml"
+
+repository = YamlMetadataRepository(METADATA_PATH)
+metadata = repository.get(SOURCE_ID)
+
+standardization_rules = StandardizationRuleFactory().build(
+    metadata.standardization,
+)
+
+expectation_rules = ExpectationRuleFactory().build(
+    metadata.data_quality,
+)
 
 
 def get_spark_session() -> SparkSession:
@@ -28,14 +40,17 @@ def get_spark_session() -> SparkSession:
 
 @dp.table(
     name="silver_orders",
-    comment="Typed and standardized sales orders from the Bronze layer.",
+    comment="Typed, standardized, and validated sales orders.",
+)
+@dp.expect_all(  # type: ignore[attr-defined]
+    expectation_rules.retain,
+)
+@dp.expect_all_or_drop(  # type: ignore[attr-defined]
+    expectation_rules.drop,
 )
 def silver_orders() -> DataFrame:
     """Define the metadata-driven Silver orders streaming table."""
     spark = get_spark_session()
-
-    repository = YamlMetadataRepository(METADATA_PATH)
-    metadata = repository.get(SOURCE_ID)
 
     source_table = (
         f"{metadata.target.catalog_name}."
@@ -43,14 +58,14 @@ def silver_orders() -> DataFrame:
         f"{metadata.target.bronze_table}"
     )
 
-    rules = StandardizationRuleFactory().build(
-        metadata.standardization,
-    )
-
     source_dataframe = spark.readStream.table(source_table)
 
     pipeline = SilverPipeline(
-        processors=(StandardizationProcessor(rules=rules),),
+        processors=(
+            StandardizationProcessor(
+                rules=standardization_rules,
+            ),
+        ),
     )
 
     return pipeline.run(source_dataframe)
