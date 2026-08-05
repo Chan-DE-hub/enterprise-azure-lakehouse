@@ -44,6 +44,14 @@ class DataClassification(StrEnum):
     RESTRICTED = "restricted"
 
 
+class TextCase(StrEnum):
+    """Supported text-case normalization strategies."""
+
+    NONE = "none"
+    LOWER = "lower"
+    UPPER = "upper"
+
+
 class MetadataModel(BaseModel):
     """Base model for strict metadata validation."""
 
@@ -52,6 +60,29 @@ class MetadataModel(BaseModel):
         frozen=True,
         str_strip_whitespace=True,
     )
+
+
+class StandardizationColumnMetadata(MetadataModel):
+    """Technical standardization configuration for one source column."""
+
+    source_column: str = Field(min_length=1)
+    target_column: str | None = None
+    data_type: str = Field(min_length=1)
+
+    trim: bool = False
+    text_case: TextCase = TextCase.NONE
+    parse_format: str | None = None
+
+    @property
+    def resolved_target_column(self) -> str:
+        """Return the configured target column or preserve the source name."""
+        return self.target_column or self.source_column
+
+
+class StandardizationMetadata(MetadataModel):
+    """Silver standardization configuration for one source."""
+
+    columns: tuple[StandardizationColumnMetadata, ...] = ()
 
 
 class SourceLocation(MetadataModel):
@@ -114,6 +145,10 @@ class SourceMetadata(MetadataModel):
         default_factory=dict,
     )
 
+    standardization: StandardizationMetadata = Field(
+        default_factory=StandardizationMetadata,
+    )
+
     enabled: bool = True
     priority: int = Field(default=100, ge=1, le=999)
 
@@ -152,19 +187,21 @@ class SourceMetadata(MetadataModel):
                     "operation_column is required for CDC loading",
                 )
 
-        if self.load_type is LoadType.STREAMING:
-            if self.target.checkpoint_path is None:
-                raise ValueError(
-                    "checkpoint_path is required for streaming loading",
-                )
+        if self.load_type is LoadType.STREAMING and self.target.checkpoint_path is None:
+            raise ValueError(
+                "checkpoint_path is required for streaming loading",
+            )
 
-        if self.source_type in {
-            SourceType.EVENT_HUB,
-            SourceType.KAFKA,
-        }:
-            if self.location.topic_name is None:
-                raise ValueError(
-                    "topic_name is required for Event Hub or Kafka sources",
-                )
+        if (
+            self.source_type
+            in {
+                SourceType.EVENT_HUB,
+                SourceType.KAFKA,
+            }
+            and self.location.topic_name is None
+        ):
+            raise ValueError(
+                "topic_name is required for Event Hub or Kafka sources",
+            )
 
         return self

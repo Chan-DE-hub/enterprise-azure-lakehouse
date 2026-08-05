@@ -2,39 +2,42 @@
 
 from unittest.mock import Mock, call, patch
 
+from enterprise_lakehouse.common.metadata.models import TextCase
 from enterprise_lakehouse.silver.models import StandardizationRule
-from enterprise_lakehouse.silver.processors.standardization_processor import (
-    StandardizationProcessor,
-)
+from enterprise_lakehouse.silver.processors import StandardizationProcessor
 
 
 def test_processor_applies_rules_in_order() -> None:
     """The processor should apply standardization rules sequentially."""
     dataframe = Mock()
     dataframe.withColumn.return_value = dataframe
+    dataframe.drop.return_value = dataframe
 
     rules = (
         StandardizationRule(
-            column_name="order_id",
+            source_column="order_id",
             data_type="long",
         ),
         StandardizationRule(
-            column_name="order_total",
+            source_column="order_total",
             data_type="decimal(18,2)",
         ),
         StandardizationRule(
-            column_name="modified_at",
+            source_column="modified_at",
             data_type="timestamp",
         ),
         StandardizationRule(
-            column_name="order_status",
+            source_column="Order Status",
+            target_column="order_status",
             data_type="string",
             trim=True,
-            lowercase=True,
+            text_case=TextCase.LOWER,
         ),
     )
 
-    processor = StandardizationProcessor(rules=rules)
+    processor = StandardizationProcessor(
+        rules=rules,
+    )
 
     order_id_expression = object()
     order_total_expression = object()
@@ -69,14 +72,17 @@ def test_processor_applies_rules_in_order() -> None:
         call("order_status", order_status_expression),
     ]
 
+    dataframe.drop.assert_called_once_with("Order Status")
+
 
 def test_processor_returns_source_when_no_rules_exist() -> None:
-    """The processor should preserve the source when no rules are configured."""
+    """The processor should return the original DataFrame when no rules exist."""
     dataframe = Mock()
 
-    processor = StandardizationProcessor(rules=())
+    processor = StandardizationProcessor(
+        rules=(),
+    )
 
     result = processor.process(dataframe)
 
     assert result is dataframe
-    dataframe.withColumn.assert_not_called()

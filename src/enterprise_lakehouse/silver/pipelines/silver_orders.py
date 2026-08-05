@@ -3,11 +3,15 @@
 from pyspark import pipelines as dp
 from pyspark.sql import DataFrame, SparkSession
 
-from enterprise_lakehouse.silver.pipelines import SilverPipeline
-from enterprise_lakehouse.silver.pipelines.silver_orders_config import (
-    build_standardization_rules,
+from enterprise_lakehouse.common.metadata.yaml_repository import (
+    YamlMetadataRepository,
 )
+from enterprise_lakehouse.silver.metadata import StandardizationRuleFactory
+from enterprise_lakehouse.silver.pipelines import SilverPipeline
 from enterprise_lakehouse.silver.processors import StandardizationProcessor
+
+SOURCE_ID = "sales_orders"
+METADATA_PATH = "/Volumes/workspace/landing/source_files/config/sources.yaml"
 
 
 def get_spark_session() -> SparkSession:
@@ -27,19 +31,26 @@ def get_spark_session() -> SparkSession:
     comment="Typed and standardized sales orders from the Bronze layer.",
 )
 def silver_orders() -> DataFrame:
-    """Define the Silver orders streaming table."""
+    """Define the metadata-driven Silver orders streaming table."""
     spark = get_spark_session()
 
-    source_dataframe = spark.readStream.table(
-        "workspace.bronze.bronze_orders",
+    repository = YamlMetadataRepository(METADATA_PATH)
+    metadata = repository.get(SOURCE_ID)
+
+    source_table = (
+        f"{metadata.target.catalog_name}."
+        f"{metadata.target.bronze_schema}."
+        f"{metadata.target.bronze_table}"
     )
 
+    rules = StandardizationRuleFactory().build(
+        metadata.standardization,
+    )
+
+    source_dataframe = spark.readStream.table(source_table)
+
     pipeline = SilverPipeline(
-        processors=(
-            StandardizationProcessor(
-                rules=build_standardization_rules(),
-            ),
-        ),
+        processors=(StandardizationProcessor(rules=rules),),
     )
 
     return pipeline.run(source_dataframe)
