@@ -16,6 +16,18 @@ resources:
               - "/Volumes/workspace/landing/source_files/config/sources.yaml"
               - "--environment"
               - "dev"
+        - task_key: run_customers_cdc_ingestion
+          environment_key: default
+
+          spark_python_task:
+            python_file: ../../src/enterprise_lakehouse/jobs/bronze_job.py
+            parameters:
+              - "--source-id"
+              - "customers_cdc"
+              - "--metadata-path"
+              - "/Volumes/workspace/landing/source_files/config/sources.yaml"
+              - "--environment"
+              - "dev"
 
       environments:
         - environment_key: default
