@@ -60,6 +60,7 @@ if metadata.operation_column is None:
 silver_table_name = metadata.target.silver_table
 sequence_column = metadata.sequence_column
 operation_column = metadata.operation_column
+silver_history_table_name = f"{silver_table_name}_history"
 
 quarantine_table_name = build_quarantine_table_name(
     silver_table_name,
@@ -176,4 +177,23 @@ dp.create_auto_cdc_flow(
     ],
     stored_as_scd_type="1",
     name="customers_auto_cdc_scd1",
+)
+
+dp.create_streaming_table(
+    name=silver_history_table_name,
+    comment="Historical customers maintained using AUTO CDC SCD Type 2.",
+)
+
+dp.create_auto_cdc_flow(
+    target=silver_history_table_name,
+    source=VALID_VIEW,
+    keys=list(metadata.primary_keys),
+    sequence_by=sequence_column,
+    apply_as_deletes=f"{operation_column} = 'DELETE'",
+    except_column_list=[
+        operation_column,
+        "_rescued_data",
+    ],
+    stored_as_scd_type="2",  # type: ignore[arg-type]
+    name="customers_auto_cdc_scd2",
 )
