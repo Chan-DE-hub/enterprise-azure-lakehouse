@@ -1,0 +1,18 @@
+resources:
+  pipelines:
+    silver_customers:
+      name: "Enterprise Lakehouse - Silver Customers AUTO CDC SCD1"
+
+      catalog: ${resources.schemas.silver.catalog_name}
+      target: ${resources.schemas.silver.name}
+
+      root_path: ${workspace.file_path}/src
+
+      serverless: true
+      development: true
+      continuous: false
+      channel: CURRENT
+
+      libraries:
+        - file:
+            path: ../../src/enterprise_lakehouse/silver/pipelines/silver_customers.py

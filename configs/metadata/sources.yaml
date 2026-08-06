@@ -89,3 +89,107 @@ sources:
     governance:
       business_domain: sales
       owner: data-platform
+
+  - source_id: customers_cdc
+
+    source_system: crm
+
+    source_type: file
+
+    load_type: cdc
+
+    enabled: true
+
+    priority: 110
+
+    primary_keys:
+      - customer_id
+
+    sequence_column: change_sequence
+    operation_column: operation
+    event_timestamp_column: modified_at
+
+    file_format: json
+
+    reader_options:
+      cloudFiles.schemaLocation: /Volumes/workspace/landing/source_files/_schemas/customers_cdc
+      cloudFiles.schemaEvolutionMode: addNewColumns
+      cloudFiles.inferColumnTypes: true
+      cloudFiles.includeExistingFiles: true
+      rescuedDataColumn: _rescued_data
+
+    location:
+      object_name: customers_cdc
+      path: /Volumes/workspace/landing/source_files/customers_cdc
+
+    target:
+      catalog_name: workspace
+      bronze_schema: bronze
+      silver_schema: silver
+      gold_schema: gold
+      quarantine_schema: quarantine
+
+      bronze_table: bronze_customers_cdc
+      silver_table: silver_customers
+
+      checkpoint_path: /Volumes/workspace/landing/source_files/_checkpoints/customers_cdc
+      schema_location_path: /Volumes/workspace/landing/source_files/_schemas/customers_cdc
+
+    processing:
+      strategy: auto_cdc
+
+    standardization:
+      columns:
+        - source_column: customer_id
+          data_type: long
+
+        - source_column: customer_name
+          data_type: string
+          trim: true
+
+        - source_column: email
+          data_type: string
+          trim: true
+          text_case: lower
+
+        - source_column: customer_status
+          data_type: string
+          trim: true
+          text_case: lower
+
+        - source_column: change_sequence
+          data_type: long
+
+        - source_column: operation
+          data_type: string
+          trim: true
+          text_case: upper
+
+        - source_column: modified_at
+          data_type: timestamp
+
+    data_quality:
+      expectations:
+        - name: valid_customer_id
+          constraint: customer_id IS NOT NULL
+          action: drop
+
+        - name: valid_change_sequence
+          constraint: change_sequence IS NOT NULL
+          action: drop
+
+        - name: valid_operation
+          constraint: operation IN ('INSERT', 'UPDATE', 'DELETE')
+          action: drop
+
+        - name: valid_modified_at
+          constraint: modified_at IS NOT NULL
+          action: drop
+
+        - name: valid_customer_email
+          constraint: email IS NOT NULL
+          action: retain
+
+    governance:
+      business_domain: customer
+      owner: data-platform

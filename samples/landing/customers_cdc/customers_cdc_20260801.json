@@ -1,0 +1,5 @@
+{"customer_id":1001,"customer_name":"Ana Cruz","email":"ana@example.com","customer_status":"active","change_sequence":1,"operation":"INSERT","modified_at":"2026-08-01T08:00:00Z"}
+{"customer_id":1002,"customer_name":"Ben Santos","email":"ben@example.com","customer_status":"active","change_sequence":1,"operation":"INSERT","modified_at":"2026-08-01T08:05:00Z"}
+{"customer_id":1001,"customer_name":"Ana Cruz","email":"ana.cruz@example.com","customer_status":"active","change_sequence":2,"operation":"UPDATE","modified_at":"2026-08-01T09:00:00Z"}
+{"customer_id":1003,"customer_name":"Carla Reyes","email":"carla@example.com","customer_status":"active","change_sequence":1,"operation":"INSERT","modified_at":"2026-08-01T09:10:00Z"}
+{"customer_id":1002,"customer_name":"Ben Santos","email":"ben@example.com","customer_status":"inactive","change_sequence":2,"operation":"DELETE","modified_at":"2026-08-01T10:00:00Z"}
