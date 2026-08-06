@@ -7,6 +7,7 @@ from enterprise_lakehouse.common.metadata import (
     FileFormat,
     GovernanceMetadata,
     LoadType,
+    SilverProcessingStrategy,
     SourceLocation,
     SourceMetadata,
     SourceType,
@@ -51,6 +52,9 @@ def test_create_valid_file_source_metadata() -> None:
         source_system="sales_drop_zone",
         source_type=SourceType.FILE,
         load_type=LoadType.INCREMENTAL,
+        processing={
+            "strategy": "append",
+        },
         location=SourceLocation(
             object_name="orders",
             path="/Volumes/dev/landing/orders",
@@ -64,6 +68,7 @@ def test_create_valid_file_source_metadata() -> None:
 
     assert metadata.source_id == "sales_orders_file"
     assert metadata.file_format is FileFormat.JSON
+    assert metadata.processing.strategy is SilverProcessingStrategy.APPEND
     assert metadata.target.bronze_schema == "bronze"
     assert metadata.enabled is True
     assert metadata.priority == 100
@@ -195,6 +200,9 @@ def test_source_metadata_stores_silver_standardization_rules() -> None:
         source_system="sales",
         source_type="file",
         load_type="streaming",
+        processing={
+            "strategy": "append",
+        },
         file_format="json",
         location={
             "object_name": "orders",
@@ -277,6 +285,9 @@ def test_source_metadata_stores_data_quality_expectations() -> None:
         source_system="sales",
         source_type="file",
         load_type="streaming",
+        processing={
+            "strategy": "append",
+        },
         file_format="json",
         location={
             "object_name": "orders",
@@ -315,3 +326,144 @@ def test_source_metadata_stores_data_quality_expectations() -> None:
     assert metadata.data_quality.expectations[0].action is ExpectationAction.DROP
 
     assert metadata.data_quality.expectations[1].action is ExpectationAction.RETAIN
+
+
+def test_silver_processing_strategy_supports_pr31_strategies() -> None:
+    """Silver processing should support append and AUTO CDC strategies."""
+    assert SilverProcessingStrategy.APPEND.value == "append"
+    assert SilverProcessingStrategy.AUTO_CDC.value == "auto_cdc"
+
+
+def test_source_metadata_supports_auto_cdc_processing() -> None:
+    """Source metadata should store Silver processing configuration."""
+    metadata = SourceMetadata(
+        source_id="sales_orders",
+        source_system="sales",
+        source_type="file",
+        load_type="streaming",
+        file_format="json",
+        location={
+            "object_name": "orders",
+            "path": "/Volumes/workspace/landing/source_files/orders",
+        },
+        target={
+            "catalog_name": "workspace",
+            "bronze_table": "bronze_orders",
+            "silver_table": "silver_orders",
+            "checkpoint_path": "/Volumes/workspace/checkpoints/orders",
+        },
+        governance={
+            "business_domain": "sales",
+            "owner": "data-platform",
+        },
+        processing={
+            "strategy": "auto_cdc",
+        },
+        primary_keys=("order_id",),
+        sequence_column="change_sequence",
+        operation_column="operation",
+    )
+
+    assert metadata.processing.strategy is SilverProcessingStrategy.AUTO_CDC
+
+
+def test_auto_cdc_processing_requires_primary_keys() -> None:
+    """AUTO CDC processing must have business keys."""
+    with pytest.raises(
+        ValidationError,
+        match="primary_keys are required for AUTO CDC processing",
+    ):
+        SourceMetadata(
+            source_id="sales_orders_cdc",
+            source_system="sales",
+            source_type="file",
+            load_type="streaming",
+            file_format="json",
+            location={
+                "object_name": "orders",
+                "path": "/Volumes/workspace/landing/source_files/orders",
+            },
+            target={
+                "catalog_name": "workspace",
+                "bronze_table": "bronze_orders",
+                "silver_table": "silver_orders",
+                "checkpoint_path": "/Volumes/workspace/checkpoints/orders",
+            },
+            governance={
+                "business_domain": "sales",
+                "owner": "data-platform",
+            },
+            processing={
+                "strategy": "auto_cdc",
+            },
+            sequence_column="change_sequence",
+            operation_column="operation",
+        )
+
+
+def test_auto_cdc_processing_requires_sequence_column() -> None:
+    """AUTO CDC processing must have a deterministic sequence column."""
+    with pytest.raises(
+        ValidationError,
+        match="sequence_column is required for AUTO CDC processing",
+    ):
+        SourceMetadata(
+            source_id="sales_orders_cdc",
+            source_system="sales",
+            source_type="file",
+            load_type="streaming",
+            file_format="json",
+            location={
+                "object_name": "orders",
+                "path": "/Volumes/workspace/landing/source_files/orders",
+            },
+            target={
+                "catalog_name": "workspace",
+                "bronze_table": "bronze_orders",
+                "silver_table": "silver_orders",
+                "checkpoint_path": "/Volumes/workspace/checkpoints/orders",
+            },
+            governance={
+                "business_domain": "sales",
+                "owner": "data-platform",
+            },
+            processing={
+                "strategy": "auto_cdc",
+            },
+            primary_keys=("order_id",),
+            operation_column="operation",
+        )
+
+
+def test_auto_cdc_processing_requires_operation_column() -> None:
+    """AUTO CDC processing must identify source change operations."""
+    with pytest.raises(
+        ValidationError,
+        match="operation_column is required for AUTO CDC processing",
+    ):
+        SourceMetadata(
+            source_id="sales_orders_cdc",
+            source_system="sales",
+            source_type="file",
+            load_type="streaming",
+            file_format="json",
+            location={
+                "object_name": "orders",
+                "path": "/Volumes/workspace/landing/source_files/orders",
+            },
+            target={
+                "catalog_name": "workspace",
+                "bronze_table": "bronze_orders",
+                "silver_table": "silver_orders",
+                "checkpoint_path": "/Volumes/workspace/checkpoints/orders",
+            },
+            governance={
+                "business_domain": "sales",
+                "owner": "data-platform",
+            },
+            processing={
+                "strategy": "auto_cdc",
+            },
+            primary_keys=("order_id",),
+            sequence_column="change_sequence",
+        )

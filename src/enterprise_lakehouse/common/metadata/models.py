@@ -26,6 +26,13 @@ class LoadType(StrEnum):
     STREAMING = "streaming"
 
 
+class SilverProcessingStrategy(StrEnum):
+    """Supported Silver processing strategies."""
+
+    APPEND = "append"
+    AUTO_CDC = "auto_cdc"
+
+
 class FileFormat(StrEnum):
     """Supported landing-file formats."""
 
@@ -67,6 +74,12 @@ class MetadataModel(BaseModel):
         frozen=True,
         str_strip_whitespace=True,
     )
+
+
+class ProcessingMetadata(MetadataModel):
+    """Silver processing configuration for one source."""
+
+    strategy: SilverProcessingStrategy = SilverProcessingStrategy.APPEND
 
 
 class StandardizationColumnMetadata(MetadataModel):
@@ -170,6 +183,10 @@ class SourceMetadata(MetadataModel):
         default_factory=dict,
     )
 
+    processing: ProcessingMetadata = Field(
+        default_factory=ProcessingMetadata,
+    )
+
     standardization: StandardizationMetadata = Field(
         default_factory=StandardizationMetadata,
     )
@@ -228,5 +245,21 @@ class SourceMetadata(MetadataModel):
             raise ValueError(
                 "topic_name is required for Event Hub or Kafka sources",
             )
+
+        if self.processing.strategy is SilverProcessingStrategy.AUTO_CDC:
+            if not self.primary_keys:
+                raise ValueError(
+                    "primary_keys are required for AUTO CDC processing",
+                )
+
+            if self.sequence_column is None:
+                raise ValueError(
+                    "sequence_column is required for AUTO CDC processing",
+                )
+
+            if self.operation_column is None:
+                raise ValueError(
+                    "operation_column is required for AUTO CDC processing",
+                )
 
         return self
