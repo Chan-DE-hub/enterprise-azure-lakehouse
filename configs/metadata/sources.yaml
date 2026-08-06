@@ -42,6 +42,9 @@ sources:
       checkpoint_path: /Volumes/workspace/landing/source_files/_checkpoints/orders
       schema_location_path: /Volumes/workspace/landing/source_files/_schemas/orders
 
+    processing:
+      strategy: append
+
     standardization:
       columns:
         - source_column: order_id
