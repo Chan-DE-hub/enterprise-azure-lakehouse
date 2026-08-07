@@ -1,0 +1,6 @@
+resources:
+  schemas:
+    gold:
+      name: gold
+      catalog_name: workspace
+      comment: "Business-ready Gold facts, dimensions, and analytical datasets."

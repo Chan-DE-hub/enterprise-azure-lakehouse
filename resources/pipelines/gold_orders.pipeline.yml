@@ -1,0 +1,22 @@
+resources:
+  pipelines:
+    gold_orders:
+      name: "Enterprise Lakehouse - Gold Orders"
+
+      catalog: ${resources.schemas.gold.catalog_name}
+      target: ${resources.schemas.gold.name}
+
+      root_path: ${workspace.file_path}/src
+
+      serverless: true
+      development: true
+      continuous: false
+      channel: CURRENT
+
+      configuration:
+        enterprise_lakehouse.silver_catalog: ${resources.schemas.silver.catalog_name}
+        enterprise_lakehouse.silver_schema: ${resources.schemas.silver.name}
+
+      libraries:
+        - file:
+            path: ../../src/enterprise_lakehouse/gold/pipelines/gold_orders.py
