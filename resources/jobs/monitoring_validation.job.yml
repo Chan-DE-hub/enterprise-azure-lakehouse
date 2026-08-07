@@ -1,0 +1,23 @@
+resources:
+  jobs:
+    monitoring_validation:
+      name: "Enterprise Lakehouse - Monitoring Validation"
+
+      tasks:
+        - task_key: validate_monitoring
+          environment_key: default
+
+          spark_python_task:
+            python_file: ../../src/enterprise_lakehouse/monitoring/runtime/validate_monitoring.py
+            parameters:
+              - "--pipeline-id"
+              - "9b1fffe2-cdfb-4ce5-934f-de9474f51131"
+              - "--pipeline-id"
+              - "53aa6e85-29f8-494d-812b-657bab426cc7"
+
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "5"
+            dependencies:
+              - ../../dist/*.whl
