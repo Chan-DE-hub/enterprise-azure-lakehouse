@@ -1,4 +1,4 @@
-"""Lakeflow declarative Silver customers AUTO CDC SCD Type 1 datasets."""
+"""Lakeflow declarative Silver customers AUTO CDC datasets."""
 
 from pyspark import pipelines as dp
 from pyspark.sql import DataFrame, SparkSession
@@ -7,14 +7,14 @@ from pyspark.sql import functions as F
 from enterprise_lakehouse.common.metadata.yaml_repository import (
     YamlMetadataRepository,
 )
+from enterprise_lakehouse.silver import SilverDefinitionFactory
 from enterprise_lakehouse.silver.expectations import ExpectationRuleFactory
-from enterprise_lakehouse.silver.metadata import StandardizationRuleFactory
-from enterprise_lakehouse.silver.pipelines import SilverPipeline
-from enterprise_lakehouse.silver.processors import StandardizationProcessor
-from enterprise_lakehouse.silver.quarantine import (
-    QuarantineRuleFactory,
-    build_quarantine_table_name,
+from enterprise_lakehouse.silver.metadata import (
+    ProcessingStrategyFactory,
+    StandardizationRuleFactory,
 )
+from enterprise_lakehouse.silver.pipelines import SilverPipeline
+from enterprise_lakehouse.silver.quarantine import QuarantineRuleFactory
 
 SOURCE_ID = "customers_cdc"
 METADATA_PATH = "/Volumes/workspace/landing/source_files/config/sources.yaml"
@@ -25,27 +25,14 @@ VALID_VIEW = "_silver_customers_cdc_valid"
 repository = YamlMetadataRepository(METADATA_PATH)
 metadata = repository.get(SOURCE_ID)
 
-standardization_rules = StandardizationRuleFactory().build(
-    metadata.standardization,
+definition = SilverDefinitionFactory(
+    standardization_factory=StandardizationRuleFactory(),
+    expectation_factory=ExpectationRuleFactory(),
+    quarantine_factory=QuarantineRuleFactory(),
+    processing_strategy_factory=ProcessingStrategyFactory(),
+).build(
+    metadata=metadata,
 )
-
-expectation_rules = ExpectationRuleFactory().build(
-    metadata.data_quality,
-)
-
-all_expectation_rules = {
-    **expectation_rules.retain,
-    **expectation_rules.drop,
-}
-
-quarantine_predicate = QuarantineRuleFactory().build(
-    expectation_rules.drop,
-)
-
-if metadata.target.silver_table is None:
-    raise ValueError(
-        "silver_table is required for the Customers AUTO CDC pipeline.",
-    )
 
 if metadata.sequence_column is None:
     raise ValueError(
@@ -57,18 +44,9 @@ if metadata.operation_column is None:
         "operation_column is required for the Customers AUTO CDC pipeline.",
     )
 
-silver_table_name = metadata.target.silver_table
 sequence_column = metadata.sequence_column
 operation_column = metadata.operation_column
-silver_history_table_name = f"{silver_table_name}_history"
-
-quarantine_table_name = build_quarantine_table_name(
-    silver_table_name,
-)
-
-quarantine_table_identifier = (
-    f"{metadata.target.catalog_name}.{metadata.target.quarantine_schema}.{quarantine_table_name}"
-)
+silver_history_table_name = f"{definition.silver_table}_history"
 
 
 def get_spark_session() -> SparkSession:
@@ -87,34 +65,30 @@ def get_spark_session() -> SparkSession:
     name=STAGED_VIEW,
 )
 @dp.expect_all(  # type: ignore[attr-defined]
-    all_expectation_rules,
+    definition.expectation_rules,
 )
 def staged_customers_cdc() -> DataFrame:
     """Standardize CDC events and classify invalid records."""
     spark = get_spark_session()
 
-    source_table = (
-        f"{metadata.target.catalog_name}."
-        f"{metadata.target.bronze_schema}."
-        f"{metadata.target.bronze_table}"
+    source_dataframe = spark.readStream.table(
+        definition.source_table,
     )
-
-    source_dataframe = spark.readStream.table(source_table)
 
     pipeline = SilverPipeline(
-        processors=(
-            StandardizationProcessor(
-                rules=standardization_rules,
-            ),
-        ),
+        processors=definition.processors,
     )
 
-    standardized_dataframe = pipeline.run(source_dataframe)
+    standardized_dataframe = pipeline.run(
+        source_dataframe,
+    )
 
     return standardized_dataframe.withColumn(
         "_is_quarantined",
         F.coalesce(
-            F.expr(quarantine_predicate),
+            F.expr(
+                definition.quarantine_predicate,
+            ),
             F.lit(True),
         ),
     )
@@ -135,7 +109,7 @@ def valid_customers_cdc() -> DataFrame:
 
 
 @dp.table(
-    name=quarantine_table_identifier,
+    name=definition.quarantine_table,
     comment="Invalid customer CDC events preserved for investigation and recovery.",
 )
 def silver_customers_quarantine() -> DataFrame:
@@ -161,12 +135,12 @@ def silver_customers_quarantine() -> DataFrame:
 
 
 dp.create_streaming_table(
-    name=silver_table_name,
+    name=definition.silver_table,
     comment="Current-state customers maintained using AUTO CDC SCD Type 1.",
 )
 
 dp.create_auto_cdc_flow(
-    target=silver_table_name,
+    target=definition.silver_table,
     source=VALID_VIEW,
     keys=list(metadata.primary_keys),
     sequence_by=sequence_column,
