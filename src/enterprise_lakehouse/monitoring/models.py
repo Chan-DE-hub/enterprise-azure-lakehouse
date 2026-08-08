@@ -47,6 +47,10 @@ class ExpectationMetric(MonitoringModel):
     """Per-expectation data-quality results for one Lakeflow flow."""
 
     pipeline_id: str = Field(min_length=1)
+    pipeline_name: str | None = Field(
+        default=None,
+        min_length=1,
+    )
     update_id: str = Field(min_length=1)
     flow_name: str = Field(min_length=1)
     dataset: str = Field(min_length=1)
@@ -54,3 +58,6 @@ class ExpectationMetric(MonitoringModel):
 
     passed_records: int = Field(ge=0)
     failed_records: int = Field(ge=0)
+
+    first_recorded_at: datetime | None = None
+    last_recorded_at: datetime | None = None

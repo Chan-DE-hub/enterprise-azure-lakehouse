@@ -8,7 +8,7 @@ WITH update_status_events AS (
             'STRUCT<update_progress: STRUCT<state: STRING>>'
         ).update_progress.state AS update_status,
         timestamp AS event_timestamp,
-        error,
+        TO_JSON(error) AS error_message,
         ROW_NUMBER() OVER (
             PARTITION BY origin.pipeline_id, origin.update_id
             ORDER BY timestamp DESC
@@ -24,7 +24,7 @@ latest_update_status AS (
         pipeline_name,
         update_id,
         update_status AS final_status,
-        error AS error_message
+        error_message
     FROM update_status_events
     WHERE status_rank = 1
 ),

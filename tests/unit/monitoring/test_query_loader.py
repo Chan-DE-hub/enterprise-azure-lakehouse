@@ -170,3 +170,12 @@ def test_loader_reads_expectation_metrics_query() -> None:
     assert "passed_records" in query
     assert "failed_records" in query
     assert "expectation_name" in query
+
+
+def test_pipeline_update_query_serializes_structured_errors() -> None:
+    """Pipeline update monitoring should normalize structured errors to text."""
+    query = load_monitoring_query(
+        "pipeline_update_summary.sql",
+    )
+
+    assert "TO_JSON(error) AS error_message" in query
