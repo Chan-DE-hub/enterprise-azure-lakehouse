@@ -9,7 +9,6 @@ resources:
       root_path: ${workspace.file_path}/src
 
       serverless: true
-      development: true
       continuous: false
       channel: CURRENT
 
