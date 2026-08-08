@@ -93,14 +93,14 @@ Prefer:
 
 ```python
 def validate_source_name(source_name: str) -> None:
-    ...
+
 ```
 
 Avoid:
 
 ```python
 def process(data):
-    ...
+
 ```
 
 when the function performs multiple unrelated operations.

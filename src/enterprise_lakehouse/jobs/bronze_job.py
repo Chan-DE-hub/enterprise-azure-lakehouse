@@ -20,6 +20,7 @@ from enterprise_lakehouse.bronze.writers import (
     BronzeDeltaWriter,
     BronzeStreamingWriter,
 )
+from enterprise_lakehouse.common.config import load_settings
 from enterprise_lakehouse.common.metadata.models import LoadType, SourceMetadata
 from enterprise_lakehouse.common.metadata.repository import MetadataRepository
 from enterprise_lakehouse.common.metadata.yaml_repository import (
@@ -70,7 +71,10 @@ class BronzeJobArguments:
 
     source_id: str
     metadata_path: str
-    environment: str
+    config_path: str | None = None
+    environment: str = "dev"
+    catalog_name: str | None = None
+    bronze_schema: str | None = None
 
 
 def parse_arguments() -> BronzeJobArguments:
@@ -90,9 +94,25 @@ def parse_arguments() -> BronzeJobArguments:
         help="Workspace or volume path to the metadata YAML file.",
     )
     parser.add_argument(
+        "--config-path",
+        default=None,
+        help="Path to the environment-specific application configuration.",
+    )
+    parser.add_argument(
         "--environment",
         default="dev",
         help="Deployment environment such as dev, uat, or prod.",
+    )
+    parser.add_argument(
+        "--catalog-name",
+        default=None,
+        help="Resolved Unity Catalog name supplied by the deployment target.",
+    )
+
+    parser.add_argument(
+        "--bronze-schema",
+        default=None,
+        help="Resolved Bronze schema supplied by the deployment target.",
     )
 
     arguments = parser.parse_args()
@@ -100,7 +120,10 @@ def parse_arguments() -> BronzeJobArguments:
     return BronzeJobArguments(
         source_id=arguments.source_id,
         metadata_path=arguments.metadata_path,
+        config_path=arguments.config_path,
         environment=arguments.environment,
+        catalog_name=arguments.catalog_name,
+        bronze_schema=arguments.bronze_schema,
     )
 
 
@@ -108,6 +131,12 @@ def main() -> None:
     """Run one metadata-driven Bronze ingestion job."""
     arguments = parse_arguments()
     spark = get_spark_session()
+
+    config_path = arguments.config_path or f"configs/{arguments.environment}.yaml"
+
+    settings = load_settings(
+        config_path,
+    )
 
     repository = YamlMetadataRepository(arguments.metadata_path)
     metadata = repository.get(arguments.source_id)
@@ -130,24 +159,19 @@ def main() -> None:
     }
 
     if metadata.load_type is LoadType.STREAMING:
-        checkpoint_path = metadata.target.checkpoint_path
-
-        if checkpoint_path is None:
-            raise ValueError(
-                f"Checkpoint path is required for streaming source: {metadata.source_id}",
-            )
+        checkpoint_path = f"{settings.storage.checkpoint_path.rstrip('/')}/{metadata.source_id}"
 
         write_options = {
             "checkpointLocation": checkpoint_path,
             "trigger": "availableNow",
         }
 
+    catalog_name = arguments.catalog_name or settings.catalog.catalog_name
+
+    bronze_schema = arguments.bronze_schema or settings.catalog.bronze_schema
+
     write_config = BronzeWriteConfig(
-        table_name=(
-            f"{metadata.target.catalog_name}."
-            f"{metadata.target.bronze_schema}."
-            f"{metadata.target.bronze_table}"
-        ),
+        table_name=(f"{catalog_name}.{bronze_schema}.{metadata.target.bronze_table}"),
         mode="append",
         options=write_options,
     )

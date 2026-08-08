@@ -14,8 +14,15 @@ resources:
               - "sales_orders"
               - "--metadata-path"
               - "/Volumes/workspace/landing/source_files/config/sources.yaml"
+              - "--config-path"
+              - "../../configs/${bundle.target}.yaml"
               - "--environment"
-              - "dev"
+              - ${bundle.target}
+              - "--catalog-name"
+              - ${resources.schemas.bronze.catalog_name}
+              - "--bronze-schema"
+              - ${resources.schemas.bronze.name}
+
         - task_key: run_customers_cdc_ingestion
           environment_key: default
 
@@ -26,8 +33,14 @@ resources:
               - "customers_cdc"
               - "--metadata-path"
               - "/Volumes/workspace/landing/source_files/config/sources.yaml"
+              - "--config-path"
+              - "../../configs/${bundle.target}.yaml"
               - "--environment"
-              - "dev"
+              - ${bundle.target}
+              - "--catalog-name"
+              - ${resources.schemas.bronze.catalog_name}
+              - "--bronze-schema"
+              - ${resources.schemas.bronze.name}
 
       environments:
         - environment_key: default

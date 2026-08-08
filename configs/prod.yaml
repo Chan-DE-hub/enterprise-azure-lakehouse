@@ -1,0 +1,23 @@
+environment: prod
+application_name: enterprise-azure-lakehouse
+
+storage:
+  landing_path: abfss://landing@prodlakehouse.dfs.core.windows.net/
+  bronze_path: abfss://bronze@prodlakehouse.dfs.core.windows.net/
+  silver_path: abfss://silver@prodlakehouse.dfs.core.windows.net/
+  gold_path: abfss://gold@prodlakehouse.dfs.core.windows.net/
+  quarantine_path: abfss://quarantine@prodlakehouse.dfs.core.windows.net/
+  checkpoint_path: abfss://checkpoints@prodlakehouse.dfs.core.windows.net/
+  schema_location_path: abfss://schemas@prodlakehouse.dfs.core.windows.net/
+
+catalog:
+  catalog_name: workspace
+  bronze_schema: prod_bronze
+  silver_schema: prod_silver
+  gold_schema: prod_gold
+  config_schema: config
+  audit_schema: audit
+  quarantine_schema: prod_quarantine
+
+logging:
+  level: INFO

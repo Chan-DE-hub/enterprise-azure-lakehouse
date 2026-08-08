@@ -1,0 +1,6 @@
+resources:
+  schemas:
+    bronze:
+      name: bronze
+      catalog_name: workspace
+      comment: "Raw and append-oriented Bronze datasets."

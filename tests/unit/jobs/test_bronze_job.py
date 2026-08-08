@@ -16,7 +16,7 @@ from enterprise_lakehouse.jobs.bronze_job import (
 def test_parse_arguments_returns_bronze_job_configuration(
     monkeypatch,
 ) -> None:
-    """The job should parse source, metadata, and environment arguments."""
+    """The job should parse source, metadata, and deployment arguments."""
     monkeypatch.setattr(
         sys,
         "argv",
@@ -26,8 +26,14 @@ def test_parse_arguments_returns_bronze_job_configuration(
             "sales_orders",
             "--metadata-path",
             "/Volumes/dev/config/sources.yml",
+            "--config-path",
+            "../../configs/dev.yaml",
             "--environment",
             "dev",
+            "--catalog-name",
+            "workspace",
+            "--bronze-schema",
+            "dev_bronze",
         ],
     )
 
@@ -36,7 +42,10 @@ def test_parse_arguments_returns_bronze_job_configuration(
     assert arguments == BronzeJobArguments(
         source_id="sales_orders",
         metadata_path="/Volumes/dev/config/sources.yml",
+        config_path="../../configs/dev.yaml",
         environment="dev",
+        catalog_name="workspace",
+        bronze_schema="dev_bronze",
     )
 
 
@@ -59,6 +68,9 @@ def test_parse_arguments_defaults_environment_to_dev(
     arguments = parse_arguments()
 
     assert arguments.environment == "dev"
+    assert arguments.config_path is None
+    assert arguments.catalog_name is None
+    assert arguments.bronze_schema is None
 
 
 def test_get_spark_session_returns_active_session() -> None:
@@ -210,15 +222,21 @@ def test_main_runs_bronze_pipeline() -> None:
     arguments = BronzeJobArguments(
         source_id="sales_orders",
         metadata_path="/Volumes/dev/config/sources.yml",
+        config_path="../../configs/dev.yaml",
         environment="dev",
+        catalog_name="workspace",
+        bronze_schema="dev_bronze",
     )
 
     spark = Mock()
+
     metadata = Mock()
     metadata.load_type = LoadType.FULL
-    metadata.target.catalog_name = "dev_sales_lakehouse"
-    metadata.target.bronze_schema = "bronze"
     metadata.target.bronze_table = "sales_orders"
+
+    settings = Mock()
+    settings.catalog.catalog_name = "fallback_catalog"
+    settings.catalog.bronze_schema = "fallback_bronze"
 
     repository = Mock()
     repository.get.return_value = metadata
@@ -242,6 +260,10 @@ def test_main_runs_bronze_pipeline() -> None:
             "enterprise_lakehouse.jobs.bronze_job.build_pipeline",
             return_value=pipeline,
         ) as build_pipeline_mock,
+        patch(
+            "enterprise_lakehouse.jobs.bronze_job.load_settings",
+            return_value=settings,
+        ) as load_settings,
     ):
         from enterprise_lakehouse.jobs.bronze_job import main
 
@@ -250,7 +272,15 @@ def test_main_runs_bronze_pipeline() -> None:
     repository_class.assert_called_once_with(
         "/Volumes/dev/config/sources.yml",
     )
-    repository.get.assert_called_once_with("sales_orders")
+
+    repository.get.assert_called_once_with(
+        "sales_orders",
+    )
+
+    load_settings.assert_called_once_with(
+        "../../configs/dev.yaml",
+    )
+
     build_pipeline_mock.assert_called_once_with(
         spark=spark,
         repository=repository,
@@ -263,8 +293,81 @@ def test_main_runs_bronze_pipeline() -> None:
 
     assert keyword_arguments["source_name"] == "sales_orders"
     assert keyword_arguments["context"].environment == "dev"
-    assert keyword_arguments["write_config"].table_name == "dev_sales_lakehouse.bronze.sales_orders"
+
+    assert keyword_arguments["write_config"].table_name == "workspace.dev_bronze.sales_orders"
+
     assert keyword_arguments["write_config"].mode == "append"
+
     assert keyword_arguments["write_config"].options == {
         "mergeSchema": "true",
+    }
+
+
+def test_main_uses_environment_checkpoint_for_streaming_source() -> None:
+    """Streaming Bronze writes should use the environment checkpoint path."""
+    arguments = BronzeJobArguments(
+        source_id="sales_orders",
+        metadata_path="/Volumes/dev/config/sources.yml",
+        config_path="../../configs/dev.yaml",
+        environment="dev",
+        catalog_name="workspace",
+        bronze_schema="dev_bronze",
+    )
+
+    spark = Mock()
+
+    metadata = Mock()
+    metadata.load_type = LoadType.STREAMING
+    metadata.source_id = "sales_orders"
+    metadata.target.bronze_table = "sales_orders"
+
+    settings = Mock()
+    settings.catalog.catalog_name = "fallback_catalog"
+    settings.catalog.bronze_schema = "fallback_bronze"
+    settings.storage.checkpoint_path = "abfss://checkpoints@devlakehouse.dfs.core.windows.net/"
+
+    repository = Mock()
+    repository.get.return_value = metadata
+
+    pipeline = Mock()
+
+    with (
+        patch(
+            "enterprise_lakehouse.jobs.bronze_job.parse_arguments",
+            return_value=arguments,
+        ),
+        patch(
+            "enterprise_lakehouse.jobs.bronze_job.get_spark_session",
+            return_value=spark,
+        ),
+        patch(
+            "enterprise_lakehouse.jobs.bronze_job.YamlMetadataRepository",
+            return_value=repository,
+        ),
+        patch(
+            "enterprise_lakehouse.jobs.bronze_job.build_pipeline",
+            return_value=pipeline,
+        ),
+        patch(
+            "enterprise_lakehouse.jobs.bronze_job.load_settings",
+            return_value=settings,
+        ) as load_settings,
+    ):
+        from enterprise_lakehouse.jobs.bronze_job import main
+
+        main()
+
+    load_settings.assert_called_once_with(
+        "../../configs/dev.yaml",
+    )
+
+    _, keyword_arguments = pipeline.run.call_args
+
+    assert keyword_arguments["write_config"].table_name == "workspace.dev_bronze.sales_orders"
+
+    assert keyword_arguments["write_config"].options == {
+        "checkpointLocation": (
+            "abfss://checkpoints@devlakehouse.dfs.core.windows.net/sales_orders"
+        ),
+        "trigger": "availableNow",
     }
