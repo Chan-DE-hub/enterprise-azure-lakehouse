@@ -2,345 +2,468 @@
 
 ## Purpose
 
-This document defines the planned evolution of the Enterprise Azure Lakehouse repository.
+This roadmap records the evolution of the Enterprise Azure Lakehouse portfolio
+and distinguishes implemented capabilities from future platform extensions.
 
-The roadmap is intentionally incremental. Each milestone should introduce a focused set of capabilities together with tests, documentation, and implementation evidence.
+The project is developed incrementally through focused pull requests with
+testing, documentation, and validation evidence.
 
 ---
 
 ## Roadmap Principles
 
-The project roadmap follows these principles:
+The roadmap follows these principles:
 
-- Implement foundations before platform complexity
-- Keep milestones small and reviewable
-- Distinguish implemented capabilities from planned capabilities
-- Add tests and documentation alongside code
-- Avoid claiming production readiness before evidence exists
-- Prefer maintainable patterns over unnecessary complexity
-
----
-
-## Milestone Status
-
-| Status | Meaning |
-|---|---|
-| ✅ Completed | Implemented, reviewed, and available in the repository |
-| 🚧 In Progress | Currently being developed |
-| ⏳ Planned | Approved for a future milestone |
-| 🔍 Under Review | Scope or design is still being evaluated |
+- Build engineering foundations before adding platform complexity.
+- Keep changes focused, reviewable, and testable.
+- Distinguish implemented capabilities from future capabilities.
+- Add tests and documentation alongside implementation.
+- Prefer reusable components over duplicated pipeline logic.
+- Use metadata where variability exists, not as an abstraction for everything.
+- Keep environment-specific behavior outside core processing logic.
+- Treat monitoring, data quality, and deployment as architectural concerns.
+- Avoid claiming production readiness without production evidence.
 
 ---
 
-## v0.1.0 — Engineering Foundation
+## Current State
 
-**Status:** 🚧 In Progress
+**Status: Core implementation complete; production-readiness finalization in progress.**
+
+The repository currently demonstrates:
+
+```text
+Engineering Foundation
+        |
+        v
+Databricks Asset Bundle Foundation
+        |
+        v
+Metadata-Driven Bronze
+        |
+        v
+Silver Processing
+        |
+        v
+Gold Data Products
+        |
+        v
+Monitoring and Data Quality
+        |
+        v
+Environment-Aware Deployment
+        |
+        v
+CI and Production-Readiness Validation
+```
+
+The project remains production-inspired rather than a claim of a live
+enterprise production platform.
+
+---
+
+## Completed: Engineering Foundation
 
 ### Objective
 
-Establish the Python engineering, metadata, testing, and documentation foundation required by later Lakehouse features.
+Establish maintainable Python, configuration, metadata, testing, and
+documentation foundations for the Lakehouse implementation.
 
-### Completed Capabilities
+### Implemented
 
+- Typed Python package structure
 - Structured logging
 - Typed configuration framework
-- Enterprise exception hierarchy
+- Centralized exception hierarchy
 - Metadata models
+- Metadata validation
 - Repository abstraction
 - YAML metadata repository
-- Metadata validation
-- Business validation rules
-- Cached repository using the Decorator Pattern
-- Unit testing with pytest
-- Linting and formatting with Ruff
-- Static type checking with mypy
-- Local quality gates with pre-commit
-- Feature-branch and pull-request workflow
-
-### Remaining Scope
-
-- Architecture documentation foundation
-- Coding standards
-- Development workflow
-- Branching strategy
-- Architecture decision record structure
-- README alignment
-- Documentation review
-- Release notes for v0.1.0
-
-### Exit Criteria
-
-The milestone is complete when:
-
-- Foundation tests pass
-- Ruff checks pass
-- mypy checks pass
-- pre-commit checks pass
-- Documentation accurately reflects the repository
-- The documentation pull request is reviewed and merged
-- The repository can be tagged as `v0.1.0`
+- Metadata caching
+- Business-rule patterns
+- pytest
+- Ruff linting and formatting
+- MyPy static type checking
+- pre-commit quality gates
+- Git feature-branch workflow
+- Pull-request workflow
+- Architecture documentation
+- Engineering standards
+- Architecture Decision Records
 
 ---
 
-## v0.2.0 — Databricks Platform Foundation
-
-**Status:** ⏳ Planned
+## Completed: Databricks Platform Foundation
 
 ### Objective
 
-Introduce the initial Databricks project structure and deployment foundation without implementing complete business pipelines.
+Establish the Databricks project and deployment structure required by the
+Lakehouse workloads.
 
-### Planned Capabilities
+### Implemented
 
-- Databricks project package
 - Databricks Asset Bundles
-- Environment-specific configuration
-- Dev, test, and production deployment targets
-- Unity Catalog naming conventions
-- Catalog and schema bootstrap definitions
-- External location and volume conventions
-- Databricks Workflows foundation
-- Basic deployment validation
-- Platform documentation
+- Databricks job resources
+- Declarative pipeline resources
+- Schema resources
+- Development deployment target
+- Production deployment target
+- Environment-specific application configuration
+- Unity Catalog catalog and schema conventions
+- Databricks-native orchestration patterns
+- Bundle smoke-test job
+- Bundle validation workflow for development and production targets
 
-### Exit Criteria
+### Boundary
 
-- Bundle validation succeeds
-- Deployment configuration is environment-aware
-- Unity Catalog conventions are documented
-- No credentials are committed to the repository
-- Automated tests remain passing
-
----
-
-## v0.3.0 — Bronze Ingestion Foundation
-
-**Status:** ⏳ Planned
-
-### Objective
-
-Implement a reusable, metadata-driven Bronze ingestion framework for file-based data.
-
-### Planned Capabilities
-
-- Landing-zone conventions
-- Auto Loader foundation
-- Schema inference and schema evolution strategy
-- Append-only Bronze tables
-- Ingestion metadata columns
-- Checkpoint management
-- Quarantine handling
-- Replay support
-- Audit events
-- Sample retail source data
-- Unit and integration-style tests
-
-### Exit Criteria
-
-- At least one sample domain is ingested end to end
-- Bronze data remains traceable to the source
-- Failed records are isolated
-- Replay does not create unintended duplicates
-- Documentation explains operational behavior
+The repository demonstrates deployment configuration and runtime patterns but
+does not claim fully automated authenticated production deployment from CI.
 
 ---
 
-## v0.4.0 — Silver Processing Foundation
-
-**Status:** ⏳ Planned
+## Completed: Bronze Ingestion
 
 ### Objective
 
-Transform Bronze records into validated, deduplicated, and conformed Silver datasets.
+Provide a reusable ingestion framework that separates source reading,
+metadata, orchestration, and Delta writing concerns.
 
-### Planned Capabilities
+### Implemented
 
-- Schema enforcement
-- Data cleansing
-- Deduplication
-- Standardization
-- Business-key validation
-- CDC processing
-- Delete propagation
-- Late-arriving data handling
-- Data-quality expectations
-- Silver quarantine rules
-- Conformed customer, product, and order datasets
+- Metadata-driven ingestion
+- Loader composition
+- File reader abstraction
+- Spark file loading
+- Databricks Auto Loader abstraction
+- Ingestion engine
+- Batch Delta writer
+- Streaming Delta writer
+- Bronze write configuration
+- Pipeline execution context
+- Environment-aware catalog and schema resolution
+- Environment-specific checkpoint resolution
+- Databricks Bronze job entry point
+- Unit tests
+- Spark integration tests
 
-### Exit Criteria
+### Design Principle
 
-- Silver transformations are incremental
-- Duplicate handling is deterministic
-- CDC behavior is tested
-- Data-quality failures are observable
-- Business rules are documented
+Bronze preserves source traceability and ingestion semantics while avoiding
+business transformations that belong in downstream layers.
 
 ---
 
-## v0.5.0 — Gold Data Products
-
-**Status:** ⏳ Planned
+## Completed: Silver Processing
 
 ### Objective
 
-Build analytics-ready data products for reporting and business consumption.
+Transform Bronze data into standardized, validated, deduplicated, and trusted
+datasets using reusable processing components.
 
-### Planned Capabilities
+### Implemented
 
-- Dimensional models
-- Fact and dimension tables
-- Surrogate keys
-- Slowly Changing Dimension patterns
-- Business aggregates
-- Data marts
-- Semantic reporting datasets
-- Gold quality checks
-- Consumption documentation
+- Declarative Silver definitions
+- Silver definition factory
+- Reusable Silver pipeline composition
+- Standardization rules
+- Standardization processor
+- Metadata-driven standardization
+- Expectation rules
+- Expectation rule factory
+- Quarantine predicates
+- Quarantine table naming
+- Deduplication rules
+- Deduplication processor
+- Metadata-driven processing strategy selection
+- Customer Silver pipeline
+- Order Silver pipeline
+- Unit tests for Silver framework components
 
-### Exit Criteria
+### Design Principle
 
-- Gold outputs serve defined business questions
-- Grain is documented for every model
-- Measures and dimensions are traceable
-- Incremental refresh behavior is validated
+Silver owns data correctness and conformance. Dataset-specific variability may
+be metadata-driven, while stable transformation behavior remains implemented
+as typed Python components.
 
 ---
 
-## v0.6.0 — Observability and Operations
-
-**Status:** ⏳ Planned
+## Completed: Gold Data Products
 
 ### Objective
 
-Add centralized monitoring, auditability, operational controls, and failure-management patterns.
+Demonstrate analytics-ready models built from trusted Silver data.
 
-### Planned Capabilities
+### Implemented
 
-- Pipeline-run history
-- Dataset-level audit records
-- Structured operational events
-- SLA monitoring
-- Failure classification
-- Retry strategy
-- Alerting design
-- Backfill controls
-- Replay runbooks
-- Operational dashboards
-- Troubleshooting documentation
+- Gold definitions
+- Gold definition factory
+- Customer dimension
+- Order fact
+- Customer-order aggregate
+- Gold pipeline resource
+- Unit tests for Gold components
 
-### Exit Criteria
+### Design Principle
 
-- Pipeline success and failure are traceable
-- Operational metadata supports troubleshooting
-- Replay and backfill procedures are documented
-- Critical failure scenarios are tested
+Gold represents business-oriented data products with explicit analytical
+purpose rather than another generic transformation stage.
 
 ---
 
-## v0.7.0 — CI/CD and Infrastructure Automation
-
-**Status:** ⏳ Planned
+## Completed: Monitoring and Data Quality
 
 ### Objective
 
-Automate validation, deployment, and infrastructure provisioning.
+Provide operational visibility into pipeline execution and data-quality
+behavior.
 
-### Planned Capabilities
+### Implemented
 
-- GitHub Actions
+- Monitoring models
+- Monitoring repository
+- SQL query loader
+- Pipeline update summary query
+- Flow metrics query
+- Expectation metrics query
+- Data-quality health models
+- Data-quality health evaluation
+- Health service abstraction
+- Runtime monitoring validation
+- Monitoring validation Databricks job
+- Monitoring architecture documentation
+- Unit tests
+
+### Design Principle
+
+Operational monitoring remains separated from transformation logic so that
+observability can evolve independently from individual datasets.
+
+---
+
+## Completed: Environment and Deployment Hardening
+
+### Objective
+
+Prevent development-specific configuration from leaking into production
+deployment behavior.
+
+### Implemented
+
+- Development application configuration
+- Production application configuration
+- Development Databricks bundle target
+- Production Databricks bundle target
+- Environment-aware Bronze runtime arguments
+- Bundle-resolved catalog configuration
+- Bundle-resolved schema configuration
+- Environment-specific checkpoint roots
+- Explicit application configuration paths
+- Production schema overrides
+- Development bundle validation
+- Production bundle validation
+
+### Design Principle
+
+Deployment configuration determines environment-specific infrastructure
+values. Core processing code should not contain hardcoded development or
+production resource names.
+
+---
+
+## In Progress: Production Readiness Finalization
+
+### Objective
+
+Complete the engineering closeout of the current portfolio implementation.
+
+### Scope
+
+- Automated GitHub Actions quality gates
+- Reproducible CI dependency installation using `uv.lock`
+- Automated Ruff lint validation
+- Automated Ruff formatting validation
+- Automated MyPy validation
 - Automated pytest execution
-- Automated Ruff checks
-- Automated mypy checks
-- Databricks bundle validation
-- Environment deployment workflows
-- Terraform foundation
-- Pull-request quality gates
-- Release workflow
-- Versioning strategy
+- Automated pre-commit validation
+- Repository structure validation
+- Documentation reconciliation
+- README alignment
+- Roadmap alignment
+- Final development bundle validation
+- Final production bundle validation
+- Final regression testing
 
 ### Exit Criteria
 
-- Pull requests run automated checks
-- Deployment is repeatable
-- Environment differences are configuration-driven
-- Infrastructure changes are reviewed as code
+This milestone is complete when:
+
+- CI succeeds on the pull request.
+- Full pytest suite passes.
+- Ruff lint passes.
+- Ruff format check passes.
+- MyPy passes.
+- pre-commit passes.
+- Development bundle validation succeeds.
+- Production bundle validation succeeds.
+- README reflects the actual repository.
+- Roadmap reflects implemented and future scope accurately.
+- No credentials or environment-specific secrets are committed.
+- The working tree is clean after final validation.
 
 ---
 
-## v0.8.0 — Streaming and Event Processing
+## Future: External Source Integration
 
-**Status:** ⏳ Planned
+Potential future work includes:
 
-### Objective
+- Azure Data Factory metadata-driven ingestion
+- REST API ingestion
+- Database CDC ingestion
+- SAP or other enterprise source integration
+- Azure Event Hubs
+- Kafka-compatible event ingestion
 
-Introduce production-inspired event-streaming patterns.
+These capabilities require additional external infrastructure and are not
+presented as implemented unless corresponding code, configuration, tests, and
+deployment evidence are added to the repository.
 
-### Planned Capabilities
+---
 
-- Azure Event Hubs integration
-- Kafka-compatible ingestion
-- Streaming Bronze tables
-- Event parsing
-- Watermarks
+## Future: Advanced Streaming
+
+Potential extensions include:
+
+- Event-driven ingestion
+- Watermark strategies
+- Stateful streaming operations
 - Late-event handling
 - Stateful deduplication
-- Streaming Silver transformations
-- Operational monitoring
-- Failure and replay strategy
+- Streaming recovery patterns
+- Streaming replay procedures
+- Event-level operational metrics
 
-### Exit Criteria
-
-- Streaming data is processed incrementally
-- Checkpoints are managed safely
-- Late and duplicate events are handled deterministically
-- Recovery behavior is documented and tested
+The current repository contains streaming-oriented Bronze components and
+checkpoint handling, but this does not imply that a complete external
+event-streaming platform has been implemented.
 
 ---
 
-## Future Candidates
+## Future: Infrastructure Automation
 
-The following capabilities may be introduced after the core roadmap is stable:
+Potential extensions include:
 
-- REST API ingestion
-- Database CDC integration
-- Azure Data Factory metadata-driven ingestion
-- dbt transformation examples
-- Snowflake interoperability
-- Apache Airflow orchestration examples
-- Microsoft Purview integration
+- Infrastructure as Code
+- Terraform
+- Azure resource provisioning
+- Databricks workspace provisioning
+- Unity Catalog infrastructure provisioning
+- Workload identity
+- Secure CI deployment identity
+- Automated environment promotion
+- Release automation
+
+These capabilities should only be introduced when they add demonstrable value
+rather than increasing portfolio complexity without implementation evidence.
+
+---
+
+## Future: Advanced Operations
+
+Potential extensions include:
+
+- Alerting integrations
+- SLA enforcement
+- Replay runbooks
+- Backfill orchestration
+- Disaster-recovery procedures
 - Cost monitoring
-- Disaster-recovery design
 - Performance benchmarking
 - Synthetic scale testing
-- Data-contract validation
-- Generative AI insights
+- Operational dashboards
 
-These items are exploratory and should not be treated as committed scope until moved into a defined milestone.
+---
+
+## Future: Governance and Interoperability
+
+Potential extensions include:
+
+- Microsoft Purview integration
+- Data-contract validation
+- Additional Unity Catalog governance patterns
+- dbt interoperability
+- Snowflake interoperability
+- Apache Airflow orchestration examples
+
+These are optional extensions rather than requirements for the current
+Lakehouse architecture.
 
 ---
 
 ## Scope Management
 
-A roadmap item should be moved into active development only when:
+A future capability should move into active development only when:
 
-- Its purpose is clearly defined
-- Dependencies are available
-- Acceptance criteria are documented
-- The implementation can be delivered in a focused pull request or small pull-request series
-- The repository is ready to support the added complexity
+- its purpose is clearly defined;
+- required dependencies are available;
+- acceptance criteria can be stated;
+- implementation evidence can be produced;
+- automated validation can be added where appropriate; and
+- the capability improves the architecture rather than merely expanding the
+  technology list.
 
-Unrelated features should not be added to an active milestone solely because they appear useful.
+The repository should avoid adding technologies solely to increase the number
+of tools represented.
+
+---
+
+## Definition of Implemented
+
+A capability should generally be described as implemented only when there is
+repository evidence such as one or more of the following:
+
+- executable code;
+- deployment configuration;
+- tests;
+- metadata or configuration;
+- runtime validation;
+- architecture documentation; or
+- reproducible validation commands.
+
+Architecture diagrams or roadmap entries alone do not constitute an
+implementation.
+
+---
+
+## Portfolio Boundary
+
+This repository demonstrates production-inspired engineering practices.
+
+It does not claim:
+
+- operation of a live enterprise production platform;
+- enterprise-scale throughput;
+- production SLAs;
+- organization-wide governance administration;
+- live external enterprise source integrations unless explicitly implemented;
+- complete disaster recovery;
+- production incident-management processes; or
+- fully automated production deployment with enterprise credentials.
+
+This distinction is intentional and keeps the portfolio aligned with
+demonstrable implementation evidence.
 
 ---
 
 ## Roadmap Maintenance
 
-This document should be updated when:
+Update this document when:
 
-- A milestone is completed
-- Scope changes materially
-- A capability moves from planned to active development
-- A design decision changes the delivery sequence
-- A new dependency affects the roadmap
+- a capability is implemented;
+- scope changes materially;
+- a future capability becomes active work;
+- architecture decisions change;
+- deployment behavior changes; or
+- repository evidence no longer matches the documented status.
 
-The roadmap should reflect actual repository progress rather than aspirational claims.
+The roadmap should describe the repository that exists, not the repository we
+hope exists.
